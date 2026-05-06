@@ -625,17 +625,21 @@
                 const data = await res.json();
                 
                 if (!data.initialized) {
-                    document.getElementById('nav-status').className = 'w-2 h-2 rounded-full bg-red-500';
-                    return;
+                    document.getElementById('nav-status').className = 'w-2 h-2 rounded-full bg-yellow-500 animate-pulse';
+                } else {
+                    document.getElementById('nav-status').className = 'w-2 h-2 rounded-full bg-green-500 animate-pulse';
                 }
                 
-                document.getElementById('nav-status').className = 'w-2 h-2 rounded-full bg-green-500 animate-pulse';
-                document.getElementById('stat-tracking').textContent = `${data.stocks.length} ASSETS TRACKED`;
-                document.getElementById('param-threshold').textContent = `±${data.threshold}%`;
-
-                renderCards(data.stocks, data.threshold);
-                renderAlerts(data.alerts);
+                if (data.stocks) {
+                    document.getElementById('stat-tracking').textContent = `${data.stocks.length} ASSETS TRACKED`;
+                    document.getElementById('param-threshold').textContent = `±${data.threshold}%`;
+                    renderCards(data.stocks, data.threshold);
+                }
+                if (data.alerts) {
+                    renderAlerts(data.alerts);
+                }
             } catch (e) {
+                console.error("Fetch Status Error:", e);
                 document.getElementById('nav-status').className = 'w-2 h-2 rounded-full bg-red-500';
             }
         }
