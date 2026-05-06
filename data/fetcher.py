@@ -25,10 +25,15 @@ import requests
 from config.settings import FINNHUB_API_KEY
 
 def fetch_price(ticker: str) -> Optional[float]:
-    # 1. Try Real Data from Finnhub (works on Render/Cloud)
-    if FINNHUB_API_KEY and len(FINNHUB_API_KEY) > 10:
+    key = FINNHUB_API_KEY
+    # Handle potential doubled-up keys from dashboard copy-paste errors
+    if key and len(key) == 40 and key[:20] == key[20:]:
+        key = key[:20]
+        
+    # 1. Try Real Data from Finnhub
+    if key and len(key) > 10:
         try:
-            url = f"https://finnhub.io/api/v1/quote?symbol={ticker}&token={FINNHUB_API_KEY}"
+            url = f"https://finnhub.io/api/v1/quote?symbol={ticker}&token={key}"
             response = requests.get(url, timeout=5)
             if response.status_code == 200:
                 data = response.json()
@@ -36,8 +41,10 @@ def fetch_price(ticker: str) -> Optional[float]:
                     price = float(data['c'])
                     _current_mock_prices[ticker] = price # Sync
                     return round(price, 4)
+            elif response.status_code == 401:
+                print(f"Finnhub 401: Invalid Key (Starts with {key[:4]}...)")
             else:
-                print(f"Finnhub API Error: {response.status_code} - {response.text[:50]}")
+                print(f"Finnhub API Error: {response.status_code}")
         except Exception as e:
             print(f"Finnhub request error for {ticker}: {e}")
 
