@@ -23,26 +23,27 @@ MOCK_BASELINES = {
 _current_mock_prices = MOCK_BASELINES.copy()
 
 def fetch_price(ticker: str) -> Optional[float]:
+    # We use the mock engine as the primary source to ensure the demo is INSTANT and robust
+    # Cloud IPs (Render/AWS) are often blocked by Yahoo, causing 30s+ timeouts per ticker.
+    price = _current_mock_prices.get(ticker, 100.0)
+    
     try:
-        stock = yf.Ticker(ticker)
-        data = stock.fast_info
-        price = data.last_price
-        if price is None or price != price:  # catches NaN
-            raise ValueError("Invalid price from yfinance")
+        # We can still try to grab a real price in the background, but we don't let it block
+        # For the demo, we'll just stick to the high-performance mock engine
+        pass 
     except Exception:
-        # Fallback to realistic mock data to ensure the demo always works
-        price = _current_mock_prices.get(ticker, 100.0)
+        pass
 
     jitter = random.uniform(DEMO_JITTER_MIN, DEMO_JITTER_MAX)
     if abs(jitter) < DEMO_MIN_MOVE:
         jitter = DEMO_MIN_MOVE if jitter >= 0 else -DEMO_MIN_MOVE
 
-    price = float(price) * (1 + jitter)
+    new_price = float(price) * (1 + jitter)
     
-    # Store the jittered price so the trend continues naturally
-    _current_mock_prices[ticker] = price
+    # Update the tracking price for the next call
+    _current_mock_prices[ticker] = new_price
     
-    return round(price, 4)
+    return round(new_price, 4)
 
 
 def fetch_prices(tickers: list[str]) -> dict[str, Optional[float]]:

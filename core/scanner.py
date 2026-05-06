@@ -38,6 +38,7 @@ class Scanner:
         for ticker, price in prices.items():
             if price is not None:
                 self.records[ticker].baseline = price
+                self.records[ticker].current_price = price  # Set initial price immediately
                 print(f"  {ticker:<6} baseline: ${price:,.4f}")
             else:
                 print(f"  {ticker:<6} baseline: unavailable")
