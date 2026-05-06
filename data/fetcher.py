@@ -9,11 +9,11 @@ DEMO_MIN_MOVE = 0.01
 
 # Realistic fallback baselines if yfinance blocks the server IP
 MOCK_BASELINES = {
-    "AAPL": 175.50,
-    "TSLA": 190.20,
-    "NVDA": 850.10,
-    "MSFT": 410.30,
-    "AMZN": 178.90,
+    "AAPL": 284.18,
+    "TSLA": 389.37,
+    "NVDA": 196.48,
+    "MSFT": 416.18,
+    "AMZN": 276.20,
     "AMC": 4.50,
     "GME": 15.20,
     "PLTR": 24.10,
