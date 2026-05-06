@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Optional
 from datetime import datetime
-from data.fetcher import fetch_prices
+from data.fetcher import fetch_prices, MOCK_BASELINES
 from config.settings import TICKERS, TICKER_NAMES, ALERT_THRESHOLD
 
 
@@ -24,9 +24,14 @@ class StockRecord:
 
 class Scanner:
     def __init__(self):
-        self.records: dict[str, StockRecord] = {
-            ticker: StockRecord(ticker=ticker) for ticker in TICKERS
-        }
+        self.records: dict[str, StockRecord] = {}
+        for ticker in TICKERS:
+            base = MOCK_BASELINES.get(ticker, 100.0)
+            self.records[ticker] = StockRecord(
+                ticker=ticker, 
+                baseline=base, 
+                current_price=base
+            )
         self.alerts_log: list[dict] = []
         self.initialized: bool = False
         self.error: Optional[str] = None

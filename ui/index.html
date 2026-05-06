@@ -487,24 +487,26 @@
             let html = '';
 
             stocks.forEach(s => {
+                const ticker = s.ticker || "---";
+                const price = s.price || s.baseline || 0;
                 const pct = s.pct_change || 0;
-                const isAlert = Math.abs(pct) >= threshold;
                 const sign = pct >= 0 ? '+' : '';
+                const isAlert = Math.abs(pct) >= threshold;
                 
-                if (!priceHistory[s.ticker]) priceHistory[s.ticker] = [];
-                if (s.price != null) {
-                    priceHistory[s.ticker].push(s.price);
-                    if (priceHistory[s.ticker].length > 40) priceHistory[s.ticker].shift();
+                if (!priceHistory[ticker]) priceHistory[ticker] = [];
+                if (price > 0) {
+                    priceHistory[ticker].push(price);
+                    if (priceHistory[ticker].length > 40) priceHistory[ticker].shift();
                 }
 
-                const prices = priceHistory[s.ticker];
-                const min = prices.length ? Math.min(...prices) : s.price;
-                const max = prices.length ? Math.max(...prices) : s.price;
+                const prices = priceHistory[ticker];
+                const min = prices.length ? Math.min(...prices) : price;
+                const max = prices.length ? Math.max(...prices) : price;
                 const range = (max - min) || 1;
-                const posPct = ((s.price - min) / range) * 100;
+                const posPct = ((price - min) / range) * 100;
                 
-                const momentum = prices.length > 5 ? (s.price - prices[prices.length - 5]) : 0;
-                const volatility = ((range / min) * 100).toFixed(2);
+                const momentum = prices.length > 5 ? (price - prices[prices.length - 5]) : 0;
+                const volatility = ((range / (min || 1)) * 100).toFixed(2);
 
                 html += `
                     <div class="stock-card rounded-3xl p-6 ${isAlert ? 'alert-active' : ''} group relative overflow-hidden bg-[#0a0a0a] border border-white/5 hover:bg-[#111]">
@@ -515,10 +517,10 @@
                         <div class="flex justify-between items-start mb-6 relative z-10">
                             <div class="flex items-center gap-3">
                                 <div class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-serif text-lg text-white group-hover:scale-110 transition-transform">
-                                    ${s.ticker[0]}
+                                    ${ticker[0]}
                                 </div>
                                 <div>
-                                    <h3 class="text-xl font-serif text-white tracking-tight leading-none">${s.ticker}/USD</h3>
+                                    <h3 class="text-xl font-serif text-white tracking-tight leading-none">${ticker}/USD</h3>
                                     <p class="text-[9px] text-gray-500 font-mono mt-1.5 uppercase tracking-widest">Global Equities</p>
                                 </div>
                             </div>
@@ -526,7 +528,7 @@
                                 <div class="px-3 py-1 rounded-full text-xs font-mono border ${isAlert ? 'border-[#FF4500] text-[#FF4500] bg-[#FF4500]/10 shadow-[0_0_15px_rgba(255,69,0,0.4)]' : 'border-white/10 text-white/70 bg-white/5'}">
                                     ${sign}${pct.toFixed(2)}%
                                 </div>
-                                <p class="text-[9px] text-gray-600 font-mono mt-2">BASE: ${fmt(s.baseline)}</p>
+                                <p class="text-[9px] text-gray-600 font-mono mt-2">BASE: ${fmt(s.baseline || price)}</p>
                             </div>
                         </div>
                         
@@ -536,7 +538,7 @@
                             <div class="col-span-5 flex flex-col justify-end pb-1">
                                 <div class="text-gray-500 text-[9px] uppercase tracking-widest font-mono mb-1">Current Price</div>
                                 <div class="text-3xl lg:text-4xl font-light tracking-tight text-white font-mono leading-none">
-                                    <span class="text-gray-600 text-xl mr-0.5">$</span>${fmt(s.price)}
+                                    <span class="text-gray-600 text-xl mr-0.5">$</span>${fmt(price)}
                                 </div>
                                 <!-- Range bar -->
                                 <div class="mt-4">
