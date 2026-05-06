@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stock Alert Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #090d13;
+      --surface:    #0f1620;
+      --border:     #1e2d42;
+      --accent:     #00d4ff;
+      --accent2:    #7c3aed;
+      --green:      #10d97a;
+      --red:        #ff4757;
+      --amber:      #ffa502;
+      --text:       #e2eaf4;
+      --muted:      #5a7089;
+      --card-glow-g: rgba(16, 217, 122, 0.08);
+      --card-glow-r: rgba(255, 71, 87, 0.08);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at top left, rgba(0,212,255,.14), transparent 18%),
+                  radial-gradient(circle at right center, rgba(124,58,237,.14), transparent 20%),
+                  linear-gradient(180deg, #07070d 0%, #0c1220 42%, #0d131f 100%);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .premium-backdrop {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        radial-gradient(circle at 24% 18%, rgba(255,255,255,.06), transparent 24%),
+        radial-gradient(circle at 74% 22%, rgba(255,183,77,.08), transparent 18%),
+        linear-gradient(120deg, rgba(255, 255, 255, 0.04), transparent 25%);
+    }
+
+    /* ── BACKGROUND GRID ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(rgba(0,212,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,212,255,.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+      gap: 0.75rem;
+      padding: 0 2rem;
+      min-height: 64px;
+      background: rgba(9,13,19,.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo {
+      display: flex; align-items: center; gap: .75rem;
+      font-size: 1.2rem; font-weight: 700; letter-spacing: -.3px;
+    }
+    .logo-title {
+      display: flex; flex-direction: column;
+      gap: .15rem;
+      line-height: 1.1;
+    }
+    .logo-name {
+      display: flex; align-items: center; gap: .55rem;
+      font-size: 1.15rem; letter-spacing: -.2px;
+    }
+    .logo-subtitle {
+      font-size: .82rem; color: rgba(226,234,244,.68);
+      font-weight: 500;
+    }
+    .site-badge {
+      font-size: .65rem; letter-spacing: .7px; text-transform: uppercase;
+      background: rgba(255,255,255,.08);
+      color: #ffd066;
+      border: 1px solid rgba(255,255,255,.12);
+      padding: .2rem .55rem;
+      border-radius: 999px;
+    }
+    .logo-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: grid; place-items: center; font-size: 1rem;
+    }
+    .header-right {
+      display: flex; align-items: center; gap: 1rem;
+    }
+    #status-badge {
+      display: flex; align-items: center; gap: .45rem;
+      font-size: .78rem; font-weight: 500; color: var(--text);
+      padding: .35rem .8rem;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 22px;
+      backdrop-filter: blur(14px);
+    }
+    #status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted);
+      transition: background .4s;
+    }
+    #status-dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .4; }
+    }
+
+    #sound-btn {
+      background: linear-gradient(135deg, rgba(0,212,255,.12), rgba(124,58,237,.12));
+      border: 1px solid rgba(255,255,255,.08);
+      color: var(--text);
+      font-size: .8rem; font-weight: 600;
+      padding: .55rem 1rem;
+      border-radius: 999px;
+      cursor: pointer;
+      display: flex; align-items: center; gap: .45rem;
+      transition: transform .2s, border-color .2s, background .2s;
+      box-shadow: 0 12px 30px rgba(0,0,0,.12);
+    }
+    #sound-btn:hover { transform: translateY(-1px); border-color: var(--accent); background: rgba(0,212,255,.14); }
+    #sound-btn.muted { color: var(--muted); }
+
+    .sound-hint {
+      font-size: .72rem;
+      color: rgba(226,234,244,.72);
+      margin-top: .35rem;
+      width: 100%;
+      text-align: right;
+    }
+
+    .card-name {
+      font-size: .82rem;
+      color: rgba(226,234,244,.78);
+      margin-bottom: .6rem;
+      line-height: 1.2;
+    }
+
+    #last-updated {
+      font-size: .75rem; color: var(--muted); font-family: 'JetBrains Mono', monospace;
+    }
+    .alert-log-updated {
+      font-size: .72rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: .2rem;
+    }
+
+    /* ── LAYOUT ── */
+    main {
+      position: relative; z-index: 1;
+      max-width: 1280px; margin: 0 auto;
+      padding: 2rem 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1.5rem;
+    }
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+    }
+
+    /* ── SECTION LABELS ── */
+    .section-label {
+      font-size: .7rem; font-weight: 600; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: .75rem;
+    }
+
+    /* ── STOCK CARDS ── */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .stock-card {
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 22px;
+      padding: 1.35rem 1.45rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color .3s, transform .25s, box-shadow .3s;
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 60px rgba(0,0,0,.12);
+    }
+    .stock-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(0,212,255,.35);
+      box-shadow: 0 28px 70px rgba(0,0,0,.18);
+    }
+    .stock-card::before {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: inherit;
+      opacity: 0;
+      transition: opacity .4s;
+    }
+    .stock-card.up::before   { background: var(--card-glow-g); opacity: 1; }
+    .stock-card.down::before { background: var(--card-glow-r); opacity: 1; }
+    .stock-card.alerting {
+      border-color: var(--amber);
+      box-shadow: 0 0 22px rgba(255,165,2,.15), 0 10px 24px rgba(0,0,0,.12);
+    }
+    .stock-card.alerting::before {
+      opacity: 1;
+      background: rgba(255,165,2,.08);
+    }
+    .stock-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+
+    .card-ticker {
+      font-size: .72rem; font-weight: 800; letter-spacing: 1.6px;
+      color: rgba(255,255,255,.72); text-transform: uppercase;
+      margin-bottom: .35rem;
+    }
+    .card-name {
+      font-size: .84rem; font-weight: 500;
+      color: rgba(226,234,244,.86);
+      margin-bottom: .45rem;
+      min-height: 36px;
+      line-height: 1.2;
+    }
+    .card-header {
+      display: flex; align-items: center; gap: .8rem;
+      margin-bottom: .8rem;
+      flex-wrap: wrap;
+    }
+    .card-price {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.95rem; font-weight: 700;
+      letter-spacing: -.6px;
+      transition: color .4s;
+      display: inline-flex;
+      align-items: center;
+    }
+    .card-price.flash-up   { color: var(--green); }
+    .card-price.flash-down { color: var(--red); }
+
+    .card-arrow {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px; height: 28px;
+      margin-left: 0.65rem;
+      border-radius: 50%;
+      background: rgba(255,255,255,.06);
+      color: var(--muted);
+      font-size: 0.9rem;
+      transition: transform .3s, background .3s, color .3s;
+    }
+    .card-arrow.up { background: rgba(16,217,122,.15); color: var(--green); transform: translateY(-1px); }
+    .card-arrow.down { background: rgba(255,71,87,.15); color: var(--red); transform: translateY(1px); }
+    .card-arrow.flat { background: rgba(90,112,137,.12); color: var(--muted); }
+
+    .card-meta {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: .75rem;
+      margin-top: .9rem;
+    }
+    .card-change {
+      font-size: .85rem; font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+      padding: .35rem .65rem;
+      border-radius: 999px;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+    }
+    .card-change.up   { background: rgba(16,217,122,.13); color: var(--green); }
+    .card-change.down { background: rgba(255,71,87,.14);  color: var(--red); }
+    .card-change.flat { background: rgba(90,112,137,.15); color: var(--muted); }
+
+    .card-baseline {
+      font-size: .72rem; color: rgba(226,234,244,.72);
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: .55rem;
+    }
+
+    .alert-indicator {
+      position: absolute; top: .75rem; right: .75rem;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--amber);
+      box-shadow: 0 0 12px var(--amber);
+      display: none;
+    }
+    .stock-card.alerting .alert-indicator { display: block; animation: pulse 1s infinite; }
+    .stock-card.alerting {
+      border-color: var(--amber);
+      box-shadow: 0 0 26px rgba(255,165,2,.18), 0 18px 42px rgba(0,0,0,.16);
+    }
+    .stock-card.alerting::before {
+      opacity: 1;
+      background: rgba(255,165,2,.08);
+    }
+
+    /* ── THRESHOLD BAR ── */
+    .threshold-bar {
+      margin-top: .85rem;
+      height: 4px;
+      background: rgba(255,255,255,.08);
+      border-radius: 999px;
+      overflow: hidden;
+      box-shadow: inset 0 0 3px rgba(0,0,0,.2);
+    }
+    .threshold-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width .5s ease, background .4s;
+      background: var(--muted);
+    }
+
+    /* ── STATS ROW ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .stat-card {
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 22px;
+      padding: 1.1rem 1.3rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 24px 50px rgba(0,0,0,.12);
+    }
+    .stat-label { font-size: .7rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+    .stat-value { font-size: 1.5rem; font-weight: 700; margin-top: .2rem; font-family: 'JetBrains Mono', monospace; }
+
+    /* ── ALERT PANEL ── */
+    .alert-panel {
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 26px;
+      display: flex; flex-direction: column;
+      height: fit-content;
+      position: sticky; top: 80px;
+      max-height: calc(100vh - 100px);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 24px 64px rgba(0,0,0,.18);
+      overflow: hidden;
+    }
+    .alert-panel-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 1.1rem 1.3rem;
+      gap: 1rem;
+      border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+    .alert-panel-title {
+      font-size: .85rem; font-weight: 600;
+      display: flex; align-items: center; gap: .5rem;
+    }
+    #alert-count {
+      background: rgba(255,165,2,.15);
+      color: var(--amber);
+      font-size: .7rem; font-weight: 700;
+      padding: .15rem .5rem;
+      border-radius: 10px;
+    }
+    .clear-btn {
+      font-size: .7rem; color: var(--muted);
+      background: none; border: none; cursor: pointer;
+      padding: .2rem .5rem;
+      border-radius: 6px;
+      transition: color .2s;
+    }
+    .clear-btn:hover { color: var(--red); }
+
+    .alert-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: .75rem;
+      display: flex; flex-direction: column; gap: .5rem;
+    }
+    .alert-list::-webkit-scrollbar { width: 4px; }
+    .alert-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .alert-item {
+      background: linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,.03));
+      border: 1px solid rgba(255,255,255,.12);
+      border-left: 4px solid var(--amber);
+      border-radius: 16px;
+      padding: .95rem 1.05rem;
+      animation: slideIn .3s ease;
+      box-shadow: 0 20px 44px rgba(0,0,0,.08);
+    }
+    .alert-item.new { border-color: rgba(0,212,255,.35); border-left-color: var(--accent); background: rgba(0,212,255,.08); }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .alert-item-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: .3rem;
+    }
+    .alert-ticker { font-weight: 700; font-size: .9rem; font-family: 'JetBrains Mono', monospace; }
+    .alert-time   { font-size: .7rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+    .alert-detail { font-size: .8rem; color: var(--muted); }
+    .alert-detail span { font-weight: 600; }
+    .alert-detail .pos { color: var(--green); }
+    .alert-detail .neg { color: var(--red); }
+
+    .no-alerts {
+      text-align: center; padding: 2.5rem 1rem;
+      color: var(--muted); font-size: .82rem;
+      line-height: 1.7;
+    }
+    .no-alerts-icon { font-size: 2rem; margin-bottom: .5rem; }
+
+    /* ── LOADING ── */
+    #loading-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 1rem;
+      transition: opacity .5s;
+    }
+    #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { font-size: .85rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+<div class="premium-backdrop"></div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <p class="loading-text">Fetching baseline prices…</p>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">📈</div>
+    <div class="logo-title">
+      <div class="logo-name">
+        Stock Alert System
+        <span class="site-badge">Premium</span>
+      </div>
+      <div class="logo-subtitle">Live momentum alerts for client demos</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span id="last-updated">—</span>
+    <div id="status-badge">
+      <div id="status-dot"></div>
+      <span id="status-text">Connecting</span>
+    </div>
+    <button id="sound-btn" onclick="toggleSound()">🔔 Enable sound</button>
+  </div>
+  <div class="sound-hint" id="sound-hint">Click the bell to enable demo audio; alert sound plays automatically.</div>
+</header>
+
+<main>
+  <!-- Left: Stats + Cards -->
+  <div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Tracking</div>
+        <div class="stat-value" id="stat-tracking">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Threshold</div>
+        <div class="stat-value" id="stat-threshold">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Alerts Fired</div>
+        <div class="stat-value" id="stat-alerts" style="color:var(--amber)">0</div>
+      </div>
+    </div>
+
+    <div class="section-label">Live Prices</div>
+    <div class="cards-grid" id="cards-grid"></div>
+  </div>
+
+  <!-- Right: Alert log -->
+  <div>
+    <div class="section-label">Alert Log</div>
+    <div class="alert-panel">
+      <div class="alert-panel-header">
+        <div>
+        <div class="alert-panel-title">
+          Triggered Alerts
+          <span id="alert-count">0</span>
+        </div>
+        <div id="alert-log-updated" class="alert-log-updated">Last update —</div>
+      </div>
+      <button class="clear-btn" onclick="clearAlerts()">Clear</button>
+      </div>
+      <div class="alert-list" id="alert-list">
+        <div class="no-alerts">
+          <div class="no-alerts-icon">🔕</div>
+          No alerts yet.<br/>
+          Alerts fire when price moves<br/>beyond the configured threshold.
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  /* ── STATE ── */
+  let soundEnabled = false;
+  let lastAlertCount = 0;
+  let audioCtx = null;
+
+  /* ── SOUND ── */
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  function playAlert() {
+    if (!soundEnabled) return;
+    try {
+      const ctx = getAudioCtx();
+      const notes = [880, 1046, 1318];
+      notes.forEach((freq, i) => {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        const t = ctx.currentTime + i * 0.12;
+        osc.frequency.setValueAtTime(freq, t);
+        gain.gain.setValueAtTime(0, t);
+        gain.gain.linearRampToValueAtTime(0.25, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+        osc.start(t);
+        osc.stop(t + 0.25);
+      });
+    } catch (_) {}
+  }
+
+  function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const btn = document.getElementById('sound-btn');
+    const hint = document.getElementById('sound-hint');
+    btn.textContent = soundEnabled ? '🔇 Sound Off' : '🔔 Enable sound';
+    btn.classList.toggle('muted', !soundEnabled);
+    if (soundEnabled) {
+      unlockAudio(true);
+      hint.textContent = 'Sound enabled. Alerts will play automatically.';
+    } else {
+      hint.textContent = 'Sound muted. Enable the bell to hear alert tones.';
+    }
+  }
+
+  function unlockAudio(playTone = false) {
+    try {
+      const ctx = getAudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume().then(() => {
+          if (playTone && soundEnabled) playAlert();
+        }).catch(() => {
+          if (playTone && soundEnabled) playAlert();
+        });
+      } else if (playTone && soundEnabled) {
+        playAlert();
+      }
+    } catch (_) {
+      if (playTone && soundEnabled) playAlert();
+    }
+  }
+
+  /* ── HELPERS ── */
+  function fmt(price) {
+    if (price == null) return '—';
+    return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+  }
+
+  function fmtPct(pct) {
+    if (pct == null) return '—';
+    const sign = pct >= 0 ? '+' : '';
+    return sign + pct.toFixed(2) + '%';
+  }
+
+  /* ── CARD RENDERING ── */
+  function renderCards(stocks, threshold) {
+    const grid = document.getElementById('cards-grid');
+    stocks.forEach(s => {
+      let card = document.getElementById('card-' + s.ticker);
+      const isNew = !card;
+      if (isNew) {
+        card = document.createElement('div');
+        card.id = 'card-' + s.ticker;
+        card.className = 'stock-card';
+        card.innerHTML = `
+          <div class="alert-indicator"></div>
+          <div class="card-ticker">${s.ticker}</div>
+          <div class="card-name" id="name-${s.ticker}">${s.name || ''}</div>
+          <div class="card-header">
+            <div class="card-price" id="price-${s.ticker}">—</div>
+            <div class="card-arrow flat" id="arrow-${s.ticker}">↔</div>
+          </div>
+          <div class="card-meta">
+            <div class="card-change flat" id="change-${s.ticker}">—</div>
+            <div class="card-baseline" id="baseline-${s.ticker}"></div>
+          </div>
+          <div class="threshold-bar">
+            <div class="threshold-fill" id="fill-${s.ticker}"></div>
+          </div>`;
+        grid.appendChild(card);
+      }
+
+      const priceEl    = document.getElementById('price-' + s.ticker);
+      const arrowEl    = document.getElementById('arrow-' + s.ticker);
+      const nameEl     = document.getElementById('name-' + s.ticker);
+      const changeEl   = document.getElementById('change-' + s.ticker);
+      const baselineEl = document.getElementById('baseline-' + s.ticker);
+      const fillEl     = document.getElementById('fill-' + s.ticker);
+
+      // Price flash
+      const oldPrice = priceEl.dataset.val;
+      const newPrice = s.price;
+      priceEl.textContent = fmt(newPrice);
+      priceEl.dataset.val = newPrice;
+      if (nameEl) {
+        nameEl.textContent = s.name || '';
+      }
+
+      // Trend arrow
+      const pct = s.pct_change;
+      if (arrowEl) {
+        if (pct == null) {
+          arrowEl.textContent = '↔';
+          arrowEl.className = 'card-arrow flat';
+        } else if (pct > 0) {
+          arrowEl.textContent = '↑';
+          arrowEl.className = 'card-arrow up';
+        } else if (pct < 0) {
+          arrowEl.textContent = '↓';
+          arrowEl.className = 'card-arrow down';
+        } else {
+          arrowEl.textContent = '→';
+          arrowEl.className = 'card-arrow flat';
+        }
+      }
+      if (oldPrice && newPrice) {
+        const cls = newPrice > parseFloat(oldPrice) ? 'flash-up' : 'flash-down';
+        priceEl.classList.remove('flash-up','flash-down');
+        void priceEl.offsetWidth;
+        priceEl.classList.add(cls);
+        setTimeout(() => priceEl.classList.remove(cls), 1000);
+      }
+
+      // % change chip
+      changeEl.textContent = fmtPct(pct);
+      changeEl.className = 'card-change ' + (pct == null ? 'flat' : pct > 0 ? 'up' : pct < 0 ? 'down' : 'flat');
+
+      // Card tint
+      card.className = 'stock-card ' + (pct == null ? '' : pct > 0 ? 'up' : 'down');
+
+      // Alerting indicator
+      if (pct != null && Math.abs(pct) >= threshold) {
+        card.classList.add('alerting');
+      } else {
+        card.classList.remove('alerting');
+      }
+
+      // Baseline
+      baselineEl.textContent = s.baseline ? 'Base: ' + fmt(s.baseline) : '';
+
+      // Threshold bar
+      if (pct != null && threshold > 0) {
+        const pct_abs = Math.min(Math.abs(pct) / threshold, 1) * 100;
+        fillEl.style.width = pct_abs + '%';
+        fillEl.style.background = pct_abs >= 100 ? 'var(--red)' : pct_abs > 60 ? 'var(--amber)' : 'var(--green)';
+      }
+    });
+  }
+
+  /* ── ALERT RENDERING ── */
+  function renderAlerts(alerts) {
+    const list = document.getElementById('alert-list');
+    list.innerHTML = '';
+
+    if (!alerts || alerts.length === 0) {
+      list.innerHTML = `
+        <div class="no-alerts">
+          <div class="no-alerts-icon">🔕</div>
+          No alerts yet.<br/>
+          Alerts fire when price moves<br/>beyond the configured threshold.
+        </div>`;
+      return;
+    }
+
+    alerts.forEach(a => {
+      const item = document.createElement('div');
+      item.className = 'alert-item';
+      const sign = a.pct_change >= 0 ? '+' : '';
+      const cls  = a.pct_change >= 0 ? 'pos' : 'neg';
+      const name = a.name ? `${a.name} (${a.ticker})` : a.ticker;
+      item.innerHTML = `
+        <div class="alert-item-top">
+          <span class="alert-ticker">${name}</span>
+          <span class="alert-time">${a.time}</span>
+        </div>
+        <div class="alert-detail">
+          <span class="${cls}">${sign}${a.pct_change.toFixed(2)}%</span>
+          &nbsp;·&nbsp; ${fmt(a.price)}
+        </div>`;
+      list.appendChild(item);
+    });
+  }
+
+  function clearAlerts() {
+    localAlerts = [];
+    seenAlerts.clear();
+    totalAlertsFired = 0;
+    document.getElementById('alert-list').innerHTML = `
+      <div class="no-alerts">
+        <div class="no-alerts-icon">🔕</div>
+        No alerts yet.<br/>
+        Alerts fire when price moves<br/>beyond the configured threshold.
+      </div>`;
+    document.getElementById('alert-count').textContent = '0';
+    document.getElementById('stat-alerts').textContent = '0';
+  }
+
+  /* ── POLLING ── */
+  async function fetchStatus() {
+    try {
+      const res  = await fetch('/api/status');
+      const data = await res.json();
+
+      if (!data.initialized) {
+        document.getElementById('status-text').textContent = 'Initialising…';
+        return;
+      }
+
+      // Hide loading
+      document.getElementById('loading-overlay').classList.add('hidden');
+
+      // Status
+      document.getElementById('status-dot').classList.add('live');
+      document.getElementById('status-text').textContent = 'Live';
+      const lastUpdated = data.updated_at || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      document.getElementById('last-updated').textContent = lastUpdated;
+      document.getElementById('alert-log-updated').textContent = 'Last update: ' + lastUpdated;
+
+      // Stats
+      document.getElementById('stat-tracking').textContent = data.stocks.length;
+      document.getElementById('stat-threshold').textContent = '±' + data.threshold + '%';
+
+      renderCards(data.stocks, data.threshold);
+      renderAlerts(data.alerts);
+
+      const count = data.alert_count || 0;
+      const alertCountEl = document.getElementById('alert-count');
+      const alertsFiredEl = document.getElementById('stat-alerts');
+      alertCountEl.textContent = count;
+      alertsFiredEl.textContent = count;
+
+      if (count > lastAlertCount) {
+        playAlert();
+      }
+      lastAlertCount = count;
+    } catch (e) {
+      document.getElementById('status-dot').classList.remove('live');
+      document.getElementById('status-text').textContent = 'Offline';
+    }
+  }
+
+  document.body.addEventListener('pointerdown', unlockAudio, { once: true });
+  fetchStatus();
+  setInterval(fetchStatus, 5000);
+</script>
+</body>
+</html>
