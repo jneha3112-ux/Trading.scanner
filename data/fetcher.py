@@ -22,27 +22,32 @@ MOCK_BASELINES = {
 
 _current_mock_prices = MOCK_BASELINES.copy()
 
+import requests
+from config.settings import FINNHUB_API_KEY
+
 def fetch_price(ticker: str) -> Optional[float]:
-    # We use the mock engine as the primary source to ensure the demo is INSTANT and robust
-    # Cloud IPs (Render/AWS) are often blocked by Yahoo, causing 30s+ timeouts per ticker.
+    # 1. Try Real Data from Finnhub (works on Render/Cloud)
+    if FINNHUB_API_KEY and FINNHUB_API_KEY != "YOUR_FREE_API_KEY_HERE":
+        try:
+            url = f"https://finnhub.io/api/v1/quote?symbol={ticker}&token={FINNHUB_API_KEY}"
+            response = requests.get(url, timeout=5)
+            data = response.json()
+            if data and 'c' in data and data['c'] > 0:
+                price = float(data['c'])
+                _current_mock_prices[ticker] = price # Sync mock with real data
+                return round(price, 4)
+        except Exception as e:
+            print(f"Finnhub error for {ticker}: {e}")
+
+    # 2. Fallback to High-Performance Mock Engine (for smooth demo flow)
     price = _current_mock_prices.get(ticker, 100.0)
     
-    try:
-        # We can still try to grab a real price in the background, but we don't let it block
-        # For the demo, we'll just stick to the high-performance mock engine
-        pass 
-    except Exception:
-        pass
-
     jitter = random.uniform(DEMO_JITTER_MIN, DEMO_JITTER_MAX)
     if abs(jitter) < DEMO_MIN_MOVE:
         jitter = DEMO_MIN_MOVE if jitter >= 0 else -DEMO_MIN_MOVE
 
     new_price = float(price) * (1 + jitter)
-    
-    # Update the tracking price for the next call
     _current_mock_prices[ticker] = new_price
-    
     return round(new_price, 4)
 
 
