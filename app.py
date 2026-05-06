@@ -29,8 +29,10 @@ def status():
         return jsonify(scanner.get_state())
 
 
+# Start background scanner thread (crucial for WSGI/Gunicorn production environments)
+thread = threading.Thread(target=_run_scanner, daemon=True)
+thread.start()
+
 if __name__ == "__main__":
-    thread = threading.Thread(target=_run_scanner, daemon=True)
-    thread.start()
     print("Dashboard -> http://localhost:5000\n")
     app.run(debug=False, port=5000)
