@@ -17,5 +17,5 @@ import os
 
 # Get your free API key at https://finnhub.io/register
 # Best practice: Add this to Render -> Environment Variables
-FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "d7tjae9r01qlbd3kd9h0d7tjae9r01qlbd3kd9hg")
+FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY", "d7tjae9r01qlbd3kd9b0d7tjae9r01qlbd3kd9bg")
 
