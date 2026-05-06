@@ -574,17 +574,20 @@
                 `;
             });
 
-            if(stocks.length > 0 && grid.innerHTML === '') {
-                // Initialize reveal on new cards
-                grid.innerHTML = html;
-                grid.querySelectorAll('.stock-card').forEach((el, i) => {
-                    el.classList.add('reveal', 'active');
-                    el.style.transitionDelay = `${i * 100}ms`;
-                });
-            } else {
-                grid.innerHTML = html;
-                grid.querySelectorAll('.stock-card').forEach(el => el.classList.add('active'));
-            }
+            grid.innerHTML = html;
+            
+            // Ensure all newly added cards are visible
+            const cards = grid.querySelectorAll('.stock-card');
+            cards.forEach((el, i) => {
+                // If it doesn't have reveal/active yet, add them or just ensure opacity
+                if (!el.classList.contains('active')) {
+                    el.classList.add('reveal');
+                    // Force a reflow to ensure the transition happens
+                    void el.offsetWidth;
+                    el.classList.add('active');
+                    el.style.transitionDelay = `${(i % 6) * 100}ms`;
+                }
+            });
         }
 
         function renderAlerts(alerts) {
