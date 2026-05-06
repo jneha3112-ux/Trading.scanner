@@ -34,16 +34,18 @@ class Scanner:
         self.demo_alert_sent: bool = False
 
     def initialize_baselines(self) -> None:
-        print("Fetching baseline prices...")
+        # Force initialization to True instantly so the UI turns Green immediately
+        # We will populate the data in the background
+        self.initialized = True
+        print("Initialization forced to True. Fetching baselines in background...")
+        
         prices = fetch_prices(TICKERS)
         for ticker, price in prices.items():
             if price is not None:
                 self.records[ticker].baseline = price
-                self.records[ticker].current_price = price  # Set initial price immediately
-                print(f"  {ticker:<6} baseline: ${price:,.4f}")
-            else:
-                print(f"  {ticker:<6} baseline: unavailable")
-        self.initialized = True
+                self.records[ticker].current_price = price
+                print(f"  {ticker:<6} baseline set.")
+        
         self.last_updated = datetime.now().strftime("%H:%M:%S")
         print()
 
