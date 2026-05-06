@@ -29,6 +29,7 @@ class Scanner:
         }
         self.alerts_log: list[dict] = []
         self.initialized: bool = False
+        self.error: Optional[str] = None
         self.last_updated: Optional[str] = None
         self.demo_alert_sent: bool = False
 
@@ -110,6 +111,7 @@ class Scanner:
             })
         return {
             "initialized": self.initialized,
+            "error": self.error,
             "threshold": ALERT_THRESHOLD,
             "stocks": stocks,
             "alerts": self.alerts_log[:20],

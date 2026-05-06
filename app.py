@@ -11,11 +11,15 @@ _lock = threading.Lock()
 
 
 def _run_scanner() -> None:
-    scanner.initialize_baselines()
-    while True:
-        with _lock:
-            scanner.scan()
-        time.sleep(POLL_INTERVAL)
+    try:
+        scanner.initialize_baselines()
+        while True:
+            with _lock:
+                scanner.scan()
+            time.sleep(POLL_INTERVAL)
+    except Exception as e:
+        scanner.error = str(e)
+        print(f"THREAD ERROR: {e}")
 
 
 @app.route("/")
