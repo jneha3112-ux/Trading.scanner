@@ -645,21 +645,55 @@
     function drawTradingLine(line, offset) {
       if (line.points.length < 2) return;
 
+      // Random glitch effect
+      const glitchAmount = Math.random() * 8;
+      const glitchX = (Math.random() - 0.5) * glitchAmount;
+      const glitchY = (Math.random() - 0.5) * glitchAmount;
+
       ctx.strokeStyle = line.color;
       ctx.globalAlpha = line.opacity;
       ctx.lineWidth = line.width;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
+      // Draw main line
       ctx.beginPath();
-      ctx.moveTo(line.points[0].x - offset, line.points[0].y);
+      ctx.moveTo(line.points[0].x - offset + glitchX, line.points[0].y + glitchY);
 
       for (let i = 1; i < line.points.length; i++) {
         const point = line.points[i];
-        ctx.lineTo(point.x - offset, point.y);
+        const pGlitchX = (Math.random() - 0.5) * glitchAmount;
+        const pGlitchY = (Math.random() - 0.5) * glitchAmount;
+        ctx.lineTo(point.x - offset + pGlitchX, point.y + pGlitchY);
       }
 
       ctx.stroke();
+
+      // Draw glitch duplicates with color shifts
+      if (Math.random() > 0.7) {
+        ctx.globalAlpha = line.opacity * 0.5;
+        
+        // Red channel glitch
+        ctx.strokeStyle = '#ff0055';
+        ctx.beginPath();
+        ctx.moveTo(line.points[0].x - offset + (Math.random() - 0.5) * 6, line.points[0].y + (Math.random() - 0.5) * 6);
+        for (let i = 1; i < line.points.length; i += 3) {
+          const point = line.points[i];
+          ctx.lineTo(point.x - offset + (Math.random() - 0.5) * 6, point.y + (Math.random() - 0.5) * 6);
+        }
+        ctx.stroke();
+
+        // Cyan channel glitch
+        ctx.strokeStyle = '#00ffff';
+        ctx.beginPath();
+        ctx.moveTo(line.points[0].x - offset - (Math.random() - 0.5) * 6, line.points[0].y - (Math.random() - 0.5) * 6);
+        for (let i = 1; i < line.points.length; i += 3) {
+          const point = line.points[i];
+          ctx.lineTo(point.x - offset - (Math.random() - 0.5) * 6, point.y - (Math.random() - 0.5) * 6);
+        }
+        ctx.stroke();
+      }
+
       ctx.globalAlpha = 1;
     }
 
@@ -675,7 +709,29 @@
         const y = point.y;
 
         if (x > -50 && x < window.innerWidth + 50) {
-          ctx.fillText('$' + price, x - 20, y - 10);
+          const glitchOffsetX = (Math.random() - 0.5) * 4;
+          const glitchOffsetY = (Math.random() - 0.5) * 4;
+          
+          // Main text
+          ctx.fillText('$' + price, x - 20 + glitchOffsetX, y - 10 + glitchOffsetY);
+
+          // Glitch duplicate (red shift)
+          if (Math.random() > 0.8) {
+            ctx.globalAlpha = 0.25;
+            ctx.fillStyle = '#ff0055';
+            ctx.fillText('$' + price, x - 20 + (Math.random() - 0.5) * 6, y - 10 + (Math.random() - 0.5) * 6);
+            ctx.fillStyle = line.color;
+            ctx.globalAlpha = 0.4;
+          }
+
+          // Glitch duplicate (cyan shift)
+          if (Math.random() > 0.8) {
+            ctx.globalAlpha = 0.2;
+            ctx.fillStyle = '#00ffff';
+            ctx.fillText('$' + price, x - 20 - (Math.random() - 0.5) * 6, y - 10 - (Math.random() - 0.5) * 6);
+            ctx.fillStyle = line.color;
+            ctx.globalAlpha = 0.4;
+          }
         }
       }
 
@@ -725,6 +781,38 @@
         drawTradingLine(line, scrollOffset);
         drawPriceLabels(line, scrollOffset);
       });
+
+      // Add glitch scanlines effect
+      if (Math.random() > 0.85) {
+        ctx.strokeStyle = 'rgba(239, 35, 60, 0.1)';
+        ctx.lineWidth = 2;
+        const scanY = Math.random() * window.innerHeight;
+        ctx.beginPath();
+        ctx.moveTo(0, scanY);
+        ctx.lineTo(window.innerWidth, scanY);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.05)';
+        ctx.beginPath();
+        ctx.moveTo(0, scanY + 2);
+        ctx.lineTo(window.innerWidth, scanY + 2);
+        ctx.stroke();
+      }
+
+      // Add random noise blocks
+      if (Math.random() > 0.9) {
+        const noiseX = Math.random() * window.innerWidth;
+        const noiseY = Math.random() * window.innerHeight;
+        const noiseW = 30 + Math.random() * 50;
+        const noiseH = 10 + Math.random() * 20;
+        
+        ctx.fillStyle = 'rgba(239, 35, 60, 0.15)';
+        ctx.fillRect(noiseX, noiseY, noiseW, noiseH);
+        
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(noiseX, noiseY, noiseW, noiseH);
+      }
 
       // Vignette effect
       const vignetteGradient = ctx.createRadialGradient(
