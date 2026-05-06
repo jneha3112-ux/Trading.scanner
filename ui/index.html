@@ -1,959 +1,900 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stock Alert Scanner | Real-Time Trading Intelligence</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Manrope:wght@200;400;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --accent-red: #ef233c;
-      --accent-red-glow: rgba(239, 35, 60, 0.5);
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scanner. | The Trading Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #050505;
+            --accent: #FF4500;
+            --card: #111111;
+        }
 
-    @keyframes fade-in-up {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: white;
+            margin: 0;
+            overflow-x: hidden;
+        }
 
-    @keyframes border-spin {
-      from { --gradient-angle: 0deg; }
-      to { --gradient-angle: 360deg; }
-    }
+        .font-serif {
+            font-family: 'Playfair Display', serif;
+        }
 
-    @keyframes animStar {
-      from { transform: translateY(0px); }
-      to { transform: translateY(-2000px); }
-    }
+        /* Reveal Animation Styles */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+        }
 
-    @property --gradient-angle {
-      syntax: "<angle>";
-      initial-value: 0deg;
-      inherits: false;
-    }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
 
-    .animate-fade-up {
-      animation: fade-in-up 0.8s ease-out forwards;
-    }
+        /* Custom Floating Animations */
+        @keyframes float-hand-left {
+            0%, 100% { transform: translateY(0) rotate(0); }
+            50% { transform: translateY(-20px) rotate(2deg); }
+        }
 
-    .font-manrope { font-family: 'Manrope', sans-serif; }
-    .font-inter { font-family: 'Inter', sans-serif; }
+        @keyframes float-hand-right {
+            0%, 100% { transform: translateY(0) rotate(0); }
+            50% { transform: translateY(20px) rotate(-2deg); }
+        }
 
-    .shiny-cta {
-      --gradient-angle: 0deg;
-      position: relative;
-      overflow: hidden;
-      border-radius: 9999px;
-      padding: 1rem 2.5rem;
-      background: linear-gradient(#000000, #000000) padding-box,
-        conic-gradient(from var(--gradient-angle), transparent 0%, #ef233c 5%, #ef233c 15%, #ef233c 30%, transparent 40%, transparent 100%) border-box;
-      border: 2px solid transparent;
-      cursor: pointer;
-      isolation: isolate;
-      animation: border-spin 2.5s linear infinite;
-    }
+        .animate-float-left {
+            animation: float-hand-left 12s ease-in-out infinite;
+        }
 
-    .shiny-cta::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 50% 50%, white 0.5px, transparent 0);
-      background-size: 4px 4px;
-      opacity: 0.1;
-      z-index: 0;
-    }
+        .animate-float-right {
+            animation: float-hand-right 14s ease-in-out infinite;
+        }
 
-    /* Trading Canvas Background */
-    .trading-canvas-bg {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-      pointer-events: none;
-    }
+        /* Noise Texture Overlay */
+        .noise-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            pointer-events: none;
+            opacity: 0.05;
+            mix-blend-mode: overlay;
+            background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+        }
 
-    canvas {
-      display: block;
-    }
+        /* Parallax Container Effect */
+        .parallax-card-up {
+            transform: translateY(var(--scroll-offset-up, 0px));
+        }
 
-    .gradient-blur {
-      position: fixed;
-      z-index: 40;
-      inset: 0 0 auto 0;
-      height: 120px;
-      pointer-events: none;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
-      backdrop-filter: blur(8px);
-      mask-image: linear-gradient(to bottom, black, transparent);
-    }
+        .parallax-card-down {
+            transform: translateY(var(--scroll-offset-down, 0px));
+        }
 
-    .text-stroke {
-      -webkit-text-stroke: 1px rgba(255, 255, 255, 0.1);
-      color: transparent;
-    }
-
-    .glass-card {
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .mobile-frame {
-      background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
-      border: 12px solid #1a1a1a;
-      border-radius: 50px;
-      box-shadow: 
-        0 0 40px rgba(239, 35, 60, 0.4),
-        0 20px 60px rgba(0, 0, 0, 0.8),
-        0 40px 100px rgba(239, 35, 60, 0.15),
-        inset 0 0 0 1px rgba(255, 255, 255, 0.05),
-        inset 0 1px 2px rgba(255, 255, 255, 0.1);
-      overflow: hidden;
-      aspect-ratio: 9 / 19.5;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      transform: perspective(1200px) rotateX(5deg) rotateZ(-8deg) translateZ(50px);
-      transition: transform 0.5s cubic-bezier(0.23, 1, 0.320, 1);
-    }
-
-    .mobile-frame:hover {
-      transform: perspective(1200px) rotateX(3deg) rotateZ(-5deg) translateZ(80px);
-    }
-
-    .mobile-screen {
-      flex: 1;
-      overflow-y: auto;
-      background: linear-gradient(135deg, rgba(0,0,0,0.95) 0%, rgba(10,10,10,0.98) 100%);
-      border-radius: 40px;
-    }
-
-    .mobile-screen::-webkit-scrollbar {
-      width: 4px;
-    }
-
-    .mobile-screen::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .mobile-screen::-webkit-scrollbar-thumb {
-      background: rgba(239, 35, 60, 0.3);
-      border-radius: 2px;
-    }
-
-    .mobile-notch {
-      height: 28px;
-      background: linear-gradient(to bottom, #000, #0a0a0a);
-      border-radius: 0 0 20px 20px;
-      margin: 0 auto;
-      width: calc(100% - 80px);
-      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.8);
-    }
-
-    .stock-price-animate {
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.7; }
-    }
-  </style>
+        /* Scanner Specific Styles */
+        .stock-card {
+            background-color: #0a0a0a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.5s ease;
+        }
+        .stock-card:hover {
+            border-color: rgba(255, 69, 0, 0.5);
+            background-color: #111;
+        }
+        .stock-card.alert-active {
+            border-color: var(--accent);
+            box-shadow: 0 0 30px rgba(255, 69, 0, 0.15);
+        }
+    </style>
 </head>
-<body class="bg-black text-white font-inter overflow-x-hidden">
-  <!-- Robot Character -->
-  <div id="robot" class="fixed z-40 pointer-events-none" style="width: 100px; height: 100px;">
-    <svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_0_20px_rgba(239,35,60,0.5)]">
-      <!-- Robot body -->
-      <rect x="30" y="50" width="40" height="35" fill="#ef233c" rx="4"/>
-      
-      <!-- Robot head -->
-      <circle id="robot-head" cx="50" cy="30" r="18" fill="#ef233c"/>
-      
-      <!-- Eyes -->
-      <g id="robot-eyes">
-        <rect id="left-eye" x="40" y="24" width="6" height="8" fill="#00ffff" rx="1"/>
-        <rect id="right-eye" x="54" y="24" width="6" height="8" fill="#00ffff" rx="1"/>
-      </g>
-      
-      <!-- Mouth -->
-      <path id="mouth-path" d="M 42 36 Q 50 38 58 36" stroke="#00ffff" stroke-width="2" fill="none" stroke-linecap="round"/>
-      
-      <!-- Antenna -->
-      <line x1="38" y1="12" x2="36" y2="4" stroke="#00ffff" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="36" cy="3" r="2" fill="#ef233c"/>
-      <line x1="62" y1="12" x2="64" y2="4" stroke="#00ffff" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="64" cy="3" r="2" fill="#ef233c"/>
-      
-      <!-- Arms -->
-      <rect id="arm-left" x="22" y="60" width="8" height="20" fill="#00ffff" rx="2"/>
-      <rect id="arm-right" x="70" y="60" width="8" height="20" fill="#00ffff" rx="2"/>
-    </svg>
-    
-    <!-- Expression text bubble -->
-    <div id="expression-bubble" class="absolute -top-14 left-1/2 -translate-x-1/2 bg-[#ef233c] text-white px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap opacity-0 transition-opacity duration-300" style="box-shadow: 0 0 20px rgba(239, 35, 60, 0.5);">
-      <div id="expression-text">Ready!</div>
-      <div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-0 h-0" style="border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 5px solid #ef233c;"></div>
+<body>
+    <div class="min-h-screen bg-[#050505] selection:bg-[#FF4500] selection:text-white relative">
+        <!-- WebGL Glitch Terminal Background -->
+        <div id="glitch-bg" class="fixed inset-0 z-0 pointer-events-none"></div>
+
+        <!-- Global Noise Overlay -->
+        <div class="noise-overlay"></div>
+
+        <!-- Navigation -->
+        <nav id="main-nav" class="fixed top-0 left-0 right-0 z-50 transition-all duration-500 py-8">
+            <div class="container mx-auto px-6 flex items-center justify-between">
+                <a href="#" id="nav-logo-link" class="text-2xl font-bold tracking-tighter font-serif">
+                    Scanner.
+                </a>
+                
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#live-feed" class="text-sm text-gray-400 hover:text-white transition-colors duration-300">Live Feed</a>
+                    <a href="#alert-log" class="text-sm text-gray-400 hover:text-white transition-colors duration-300">Alert Log</a>
+                    <div class="text-sm text-gray-400 flex items-center gap-2">
+                        Status: <span id="nav-status" class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    </div>
+                </div>
+
+                <button id="sound-btn" class="inline-flex items-center justify-center px-6 py-3 rounded-full text-sm font-medium bg-white text-black hover:scale-105 hover:bg-gray-100 transition-all duration-300">
+                    Enable Audio
+                </button>
+            </div>
+        </nav>
+
+        <!-- Hero Section -->
+        <section class="relative min-h-screen flex items-center justify-center overflow-hidden pt-32 pb-20 bg-[#050505]">
+            <!-- Background Atmosphere -->
+            <div class="absolute inset-0 z-0 pointer-events-none select-none">
+                <div class="absolute top-0 left-0 w-full h-full opacity-60 mix-blend-screen">
+                    <img src="https://framerusercontent.com/images/9zvwRJAavKKacVyhFCwHyXW1U.png?width=1536&height=1024" alt="Atmosphere" class="w-full h-full object-cover object-center opacity-80">
+                </div>
+                <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#050505] z-10"></div>
+            </div>
+
+            <!-- Floating Surrealist Elements -->
+            <div class="absolute -left-[20%] top-[5%] md:left-[-5%] md:top-[-15%] w-[80vw] md:w-[40vw] max-w-[800px] z-10 pointer-events-none animate-float-left">
+                 <img src="https://framerusercontent.com/images/KNhiA5A2ykNYqNkj04Hk6BVg5A.png?width=1540&height=1320" alt="Hand Reaching" class="w-full h-auto object-contain">
+            </div>
+
+            <div class="absolute -right-[20%] bottom-[5%] md:right-[-5%] md:bottom-[-5%] w-[80vw] md:w-[35vw] max-w-[700px] z-10 pointer-events-none animate-float-right">
+                 <img src="https://framerusercontent.com/images/X89VFCABCEjjZ4oLGa3PjbOmsA.png?width=1542&height=1002" alt="Hand Receiving" class="w-full h-auto object-contain">
+            </div>
+
+            <!-- Hero Content -->
+            <div class="container mx-auto px-6 relative z-20 text-center flex flex-col items-center justify-center h-full">
+                <div id="hero-content-wrapper" class="max-w-4xl mx-auto">
+                    <div class="reveal">
+                        <h1 class="text-5xl md:text-7xl font-medium leading-[1.1] tracking-tight mb-6 text-[#ffe0e0] mix-blend-overlay font-serif" 
+                            style="text-shadow: 0 0 12px rgba(255,255,255,0.71);">
+                            Scanner. <br />
+                            <span class="italic font-light text-[#ffe0e0]">The trading agent.</span>
+                        </h1>
+                    </div>
+                    
+                    <div class="reveal" style="transition-delay: 200ms;">
+                        <p class="text-base md:text-lg text-[#ffe0e0]/90 max-w-lg mx-auto mb-16 font-light tracking-wide leading-relaxed mix-blend-overlay"
+                           style="text-shadow: 0 0 12px rgba(255,255,255,0.71);">
+                            We track market anomalies in the negative space. A real-time alert system for those who dare to act before the crowd.
+                        </p>
+                    </div>
+
+                    <div class="reveal flex flex-col items-center gap-6" style="transition-delay: 400ms;">
+                        <a href="#live-feed" class="relative group cursor-pointer inline-block">
+                           <div class="absolute inset-0 bg-[#FF4500]/20 blur-xl rounded-full opacity-0 group-hover:opacity-50 transition-opacity duration-500"></div>
+                           <div class="relative border border-white/20 bg-white/5 backdrop-blur-sm px-6 py-2 rounded-full flex items-center gap-3 text-xs md:text-sm text-white/80 uppercase tracking-widest hover:bg-white/10 transition-colors duration-300">
+                             <span>Initialize Terminal</span>
+                           </div>
+                        </a>
+                        
+                        <div class="flex items-center gap-4 text-[10px] md:text-xs text-white/40 uppercase tracking-widest mt-8 font-mono">
+                           <span id="current-time">11:11 PM</span>
+                           <span class="w-px h-3 bg-white/20"></span>
+                           <span id="stat-tracking">0 ASSETS TRACKED</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Live Feed Section -->
+        <section id="live-feed" class="py-32 relative border-t border-white/5">
+            <div class="container mx-auto px-6">
+                <div class="max-w-4xl mx-auto text-center reveal mb-24">
+                    <h2 class="text-3xl md:text-5xl lg:text-6xl leading-tight text-white/90 mb-12 font-serif">
+                        We isolate the signal <br> <span class="italic text-[#FF4500]">from the noise.</span>
+                    </h2>
+                    <p class="text-xl md:text-2xl text-gray-500 leading-relaxed font-light">
+                        Real-time tracking of volatile assets. Instant alerts when thresholds are breached. Elegance is refusal.
+                    </p>
+                </div>
+
+                <!-- Live Grid -->
+                <div id="cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Cards generated by JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Alert Log Section -->
+        <section id="alert-log" class="py-40 relative overflow-hidden bg-[#0a0a0a] border-t border-white/5">
+            <div class="container mx-auto px-6 relative z-10">
+                <div class="reveal mb-24 text-center">
+                    <h2 class="text-5xl md:text-7xl font-serif">
+                        Define your <br />
+                        <span class="italic text-[#FF4500]">market edge</span>
+                    </h2>
+                </div>
+
+                <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <!-- Alert Panel -->
+                    <div class="lg:col-span-8 parallax-card-up">
+                        <div class="reveal bg-[#111] border border-white/10 rounded-3xl p-8 aspect-[4/3] flex flex-col shadow-2xl transition-all duration-500 hover:border-[#FF4500]/30">
+                            <div class="flex justify-between items-center mb-8 border-b border-white/10 pb-4">
+                                <h3 class="text-2xl font-serif text-white flex items-center gap-3">
+                                    <iconify-icon icon="lucide:activity" class="text-[#FF4500]"></iconify-icon>
+                                    Alert History
+                                </h3>
+                                <span class="text-xs uppercase tracking-widest text-gray-500 font-mono">Total Alerts: <span id="total-alerts-count" class="text-white">0</span></span>
+                            </div>
+                            
+                            <div class="flex text-[10px] uppercase tracking-widest text-gray-500 mb-4 px-2">
+                                <div class="w-1/4">Asset</div>
+                                <div class="w-1/4 text-right">Price</div>
+                                <div class="w-1/4 text-right">Move</div>
+                                <div class="w-1/4 text-right">Time</div>
+                            </div>
+                            
+                            <div id="alert-list" class="flex-1 overflow-y-auto space-y-2 pr-2">
+                                <div class="text-center text-gray-600 py-12 font-light italic font-serif">Awaiting market movement...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Info Panel -->
+                    <div class="lg:col-span-4 parallax-card-down">
+                        <div class="reveal bg-[#FF4500] rounded-3xl p-8 aspect-[4/5] flex flex-col justify-between shadow-2xl transition-all duration-500" style="transition-delay: 150ms;">
+                            <div class="flex justify-between items-start">
+                                <div class="w-12 h-12 rounded-full bg-black/10 flex items-center justify-center">
+                                    <iconify-icon icon="lucide:crosshair" class="text-black text-2xl"></iconify-icon>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 class="text-4xl text-black mb-4 leading-none tracking-tight font-serif">
+                                    System <br />Parameters
+                                </h3>
+                                <div class="space-y-4 mt-8 text-black/80 font-mono text-sm">
+                                    <div class="flex justify-between border-b border-black/10 pb-2">
+                                        <span>Threshold</span>
+                                        <span class="font-bold text-black" id="param-threshold">±0.0%</span>
+                                    </div>
+                                    <div class="flex justify-between border-b border-black/10 pb-2">
+                                        <span>Latency</span>
+                                        <span class="font-bold text-black">Fast</span>
+                                    </div>
+                                    <div class="flex justify-between pb-2">
+                                        <span>Audio Alerts</span>
+                                        <span class="font-bold text-black" id="param-audio">DISABLED</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Background Pattern -->
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] opacity-10 pointer-events-none"
+                 style="background-image: radial-gradient(circle, #333 1px, transparent 1px); background-size: 40px 40px;">
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="py-20 border-t border-white/5 bg-[#050505] relative overflow-hidden">
+            <div class="container mx-auto px-6 relative z-10">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-12">
+                    <div class="w-full md:w-auto">
+                        <h2 class="text-[10vw] leading-[0.8] tracking-tighter text-white/10 font-bold select-none pointer-events-none">
+                            SCANNER.
+                        </h2>
+                    </div>
+                    
+                    <div class="flex flex-col gap-8 text-right">
+                        <p class="text-sm text-gray-600">© 2024 The Trading Agent. All rights reserved.</p>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
-  </div>
 
-  <div class="min-h-screen relative">
-    <!-- Trading Canvas Background -->
-    <canvas id="trading-canvas" class="trading-canvas-bg"></canvas>
+    <script>
+        // --- Visual / Theme Logic ---
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('active');
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+        document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
-    <!-- Global Background Gradient Overlay -->
-    <div class="fixed inset-0 z-0 pointer-events-none bg-gradient-to-b from-[#1a0505]/80 to-black/90"></div>
-
-    <!-- Top Blur Header -->
-    <div class="gradient-blur"></div>
-
-    <!-- Navbar -->
-    <header class="fixed top-0 left-0 w-full z-50 pt-6 px-4">
-      <nav class="max-w-7xl mx-auto flex items-center justify-between bg-black/60 backdrop-blur-xl border border-white/10 rounded-full px-6 py-3 shadow-2xl">
-        <div class="flex items-center gap-2">
-          <div class="w-5 h-5 bg-[#ef233c] rounded-sm rotate-45"></div>
-          <span class="text-lg font-bold font-manrope tracking-tight">Stock Scanner</span>
-        </div>
-        <div class="hidden md:flex items-center gap-8">
-          <a href="#" class="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Features</a>
-          <a href="#" class="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Pricing</a>
-          <a href="#" class="text-sm font-medium text-zinc-400 hover:text-white transition-colors">About</a>
-        </div>
-        <div id="status-badge" class="hidden md:flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10">
-          <span class="relative flex h-2 w-2">
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-[#ef233c]"></span>
-          </span>
-          <span class="text-xs font-medium text-white/80">Live</span>
-        </div>
-      </nav>
-    </header>
-
-    <main class="relative z-10">
-      <!-- Hero Section -->
-      <section class="min-h-screen flex items-center justify-center pt-32 pb-20 px-6">
-        <div class="max-w-7xl mx-auto w-full">
-          <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <!-- Left Content -->
-            <div>
-              <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8 animate-fade-up" style="animation-delay: 0.1s;">
-                <span class="relative flex h-2 w-2">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-2 w-2 bg-[#ef233c]"></span>
-                </span>
-                <span class="text-xs font-medium text-red-100/90 tracking-wide font-manrope">
-                  Real-Time Trading Alerts Available Now
-                </span>
-              </div>
-
-              <h1 class="text-5xl md:text-7xl font-semibold tracking-tighter font-manrope leading-[1.1] mb-8 animate-fade-up" style="animation-delay: 0.2s;">
-                <span class="block text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/40">Catch Market Moves</span>
-                <span class="block text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/40">Before They <span class="text-[#ef233c] inline-block relative">
-                  Happen
-                  <svg class="absolute w-full h-3 -bottom-2 left-0 text-[#ef233c] opacity-60" viewBox="0 0 100 10" preserveAspectRatio="none">
-                    <path d="M0 5 Q 50 10 100 5" stroke="currentColor" stroke-width="2" fill="none" />
-                  </svg>
-                </span></span>
-              </h1>
-
-              <p class="text-xl md:text-2xl text-zinc-400 max-w-xl mb-12 leading-relaxed animate-fade-up" style="animation-delay: 0.3s;">
-                Monitor real-time price movements across multiple stocks. Get instant alerts when opportunities strike.
-              </p>
-
-              <div class="flex flex-col sm:flex-row gap-6 animate-fade-up" style="animation-delay: 0.4s;">
-                <button id="get-started-btn" class="shiny-cta group">
-                  <span class="relative z-10 flex items-center gap-2 text-white font-medium">
-                    Get Started <iconify-icon icon="lucide:arrow-right" class="transition-transform group-hover:translate-x-1"></iconify-icon>
-                  </span>
-                </button>
-                <button class="group px-8 py-4 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 font-medium hover:text-white hover:bg-zinc-800 transition-all flex items-center gap-2">
-                  <iconify-icon icon="lucide:play" class="w-5 h-5"></iconify-icon>
-                  Watch Demo
-                </button>
-              </div>
-
-              <!-- Stats -->
-              <div class="grid grid-cols-3 gap-6 mt-16 pt-12 border-t border-white/10 animate-fade-up" style="animation-delay: 0.5s;">
-                <div>
-                  <div class="text-3xl font-bold font-manrope text-[#ef233c]">5+</div>
-                  <div class="text-sm text-zinc-400 mt-1">Stocks Tracked</div>
-                </div>
-                <div>
-                  <div class="text-3xl font-bold font-manrope text-[#ef233c]">0.5%</div>
-                  <div class="text-sm text-zinc-400 mt-1">Alert Threshold</div>
-                </div>
-                <div>
-                  <div class="text-3xl font-bold font-manrope text-[#ef233c]" id="stat-alerts">0</div>
-                  <div class="text-sm text-zinc-400 mt-1">Alerts Fired</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Right - Mobile Preview -->
-            <div class="hidden lg:flex justify-center animate-fade-up" style="animation-delay: 0.3s;">
-              <div class="mobile-frame w-72 h-auto">
-                <div class="mobile-notch"></div>
-                <div class="mobile-screen p-4 space-y-3">
-                  <!-- Mobile Header -->
-                  <div class="flex items-center justify-between px-1 mb-2">
-                    <span class="text-xs font-bold text-white">9:41</span>
-                    <div class="flex gap-1">
-                      <iconify-icon icon="lucide:signal" class="w-3 h-3 text-zinc-400"></iconify-icon>
-                      <iconify-icon icon="lucide:wifi" class="w-3 h-3 text-zinc-400"></iconify-icon>
-                      <iconify-icon icon="lucide:battery" class="w-3 h-3 text-zinc-400"></iconify-icon>
-                    </div>
-                  </div>
-
-                  <!-- Mobile Status -->
-                  <div class="glass-card rounded-xl p-3 border border-[#ef233c]/30 bg-red-950/20">
-                    <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-2">Status</div>
-                    <div class="flex items-center gap-2">
-                      <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-[#ef233c]"></span>
-                      </span>
-                      <span class="text-xs font-bold text-white">Live Tracking</span>
-                    </div>
-                  </div>
-
-                  <!-- Mobile Stock Cards - Premium -->
-                  <div id="mobile-cards" class="space-y-2.5">
-                    <div class="glass-card rounded-2xl p-4 border border-white/10 hover:border-[#ef233c]/50 transition-all hover:shadow-[0_0_20px_rgba(239,35,60,0.2)]">
-                      <div class="flex justify-between items-start mb-3">
-                        <div>
-                          <div class="text-[11px] font-bold text-[#ef233c] tracking-wider uppercase">TSLA</div>
-                          <div class="text-xs font-semibold text-white mt-0.5">Tesla</div>
-                        </div>
-                        <div class="px-2 py-1 rounded-lg bg-green-500/20 border border-green-500/30">
-                          <div class="text-xs font-bold text-green-400">+2.45%</div>
-                        </div>
-                      </div>
-                      <div class="text-xl font-bold text-white mb-1">$245.32</div>
-                      <div class="text-[10px] text-zinc-400">Base: $239.50</div>
-                      <div class="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div class="h-full bg-green-500" style="width: 70%"></div>
-                      </div>
-                    </div>
-
-                    <div class="glass-card rounded-2xl p-4 border border-white/10 hover:border-[#ef233c]/50 transition-all hover:shadow-[0_0_20px_rgba(239,35,60,0.2)]">
-                      <div class="flex justify-between items-start mb-3">
-                        <div>
-                          <div class="text-[11px] font-bold text-[#ef233c] tracking-wider uppercase">NVDA</div>
-                          <div class="text-xs font-semibold text-white mt-0.5">NVIDIA</div>
-                        </div>
-                        <div class="px-2 py-1 rounded-lg bg-green-500/20 border border-green-500/30">
-                          <div class="text-xs font-bold text-green-400">+1.82%</div>
-                        </div>
-                      </div>
-                      <div class="text-xl font-bold text-white mb-1">$875.45</div>
-                      <div class="text-[10px] text-zinc-400">Base: $859.20</div>
-                      <div class="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div class="h-full bg-green-500" style="width: 55%"></div>
-                      </div>
-                    </div>
-
-                    <div class="glass-card rounded-2xl p-4 border border-white/10 hover:border-[#ef233c]/50 transition-all hover:shadow-[0_0_20px_rgba(239,35,60,0.2)]">
-                      <div class="flex justify-between items-start mb-3">
-                        <div>
-                          <div class="text-[11px] font-bold text-[#ef233c] tracking-wider uppercase">PLTR</div>
-                          <div class="text-xs font-semibold text-white mt-0.5">Palantir</div>
-                        </div>
-                        <div class="px-2 py-1 rounded-lg bg-red-500/20 border border-red-500/30">
-                          <div class="text-xs font-bold text-red-400">-0.75%</div>
-                        </div>
-                      </div>
-                      <div class="text-xl font-bold text-white mb-1">$29.15</div>
-                      <div class="text-[10px] text-zinc-400">Base: $29.37</div>
-                      <div class="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div class="h-full bg-red-500" style="width: 25%"></div>
-                      </div>
-                    </div>
-
-                    <div class="glass-card rounded-2xl p-4 border border-white/10 hover:border-[#ef233c]/50 transition-all hover:shadow-[0_0_20px_rgba(239,35,60,0.2)]">
-                      <div class="flex justify-between items-start mb-3">
-                        <div>
-                          <div class="text-[11px] font-bold text-[#ef233c] tracking-wider uppercase">AMC</div>
-                          <div class="text-xs font-semibold text-white mt-0.5">AMC Ent.</div>
-                        </div>
-                        <div class="px-2 py-1 rounded-lg bg-green-500/20 border border-green-500/30">
-                          <div class="text-xs font-bold text-green-400">+0.92%</div>
-                        </div>
-                      </div>
-                      <div class="text-xl font-bold text-white mb-1">$5.48</div>
-                      <div class="text-[10px] text-zinc-400">Base: $5.43</div>
-                      <div class="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
-                        <div class="h-full bg-green-500" style="width: 35%"></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Alerts Section -->
-                  <div class="mt-4 pt-3 border-t border-white/10">
-                    <div class="text-[9px] text-zinc-500 uppercase tracking-widest font-bold mb-2">Alerts</div>
-                    <div id="mobile-alerts" class="space-y-1.5">
-                      <div class="text-[10px] text-zinc-500 italic">Monitoring...</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- Stock Cards Grid -->
-      <section class="py-32 px-6 border-t border-white/5">
-        <div class="max-w-7xl mx-auto">
-          <div class="mb-16 text-center max-w-3xl mx-auto animate-fade-up">
-            <h2 class="text-4xl md:text-5xl font-semibold text-white tracking-tight font-manrope mb-6">
-              Live Price Monitoring
-            </h2>
-            <p class="text-lg text-zinc-400 font-light">
-              Real-time tracking of top market performers with instant alerts.
-            </p>
-          </div>
-
-          <div id="cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- Cards generated by JS -->
-          </div>
-        </div>
-      </section>
-
-      <!-- Alert Log Panel -->
-      <section class="py-32 px-6 bg-zinc-950/40 border-t border-white/5">
-        <div class="max-w-7xl mx-auto">
-          <div class="mb-12 text-center max-w-3xl mx-auto">
-            <h2 class="text-4xl md:text-5xl font-semibold text-white tracking-tight font-manrope mb-6">
-              Alert History
-            </h2>
-          </div>
-
-          <div class="max-w-2xl mx-auto">
-            <div class="glass-card rounded-xl p-8">
-              <div class="flex items-center justify-between mb-6">
-                <h3 class="text-lg font-bold font-manrope">Recent Alerts</h3>
-                <span id="alert-count" class="px-3 py-1 rounded-full bg-[#ef233c]/20 text-[#ef233c] text-sm font-bold">0</span>
-              </div>
-              <div id="alert-list" class="space-y-4">
-                <div class="text-center text-zinc-400 py-8">
-                  <iconify-icon icon="lucide:bell-off" class="w-8 h-8 mx-auto mb-2 opacity-50"></iconify-icon>
-                  <p>No alerts yet. Waiting for price movements...</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <!-- CTA -->
-      <section class="py-32 px-6 text-center">
-        <div class="max-w-3xl mx-auto">
-          <h2 class="text-5xl md:text-7xl font-bold font-manrope mb-8 tracking-tighter">
-            Ready to <span class="text-[#ef233c]">Start?</span>
-          </h2>
-          <p class="text-xl text-zinc-400 mb-12">
-            Join traders catching opportunities in real-time.
-          </p>
-          <button class="group px-8 py-4 rounded-full bg-[#ef233c] hover:bg-red-700 text-white font-bold text-lg transition-all">
-            Get Started Now <iconify-icon icon="lucide:arrow-right" class="inline ml-2 group-hover:translate-x-1 transition-transform"></iconify-icon>
-          </button>
-        </div>
-      </section>
-    </main>
-  </div>
-
-  <script>
-    let soundEnabled = false;
-    let lastAlertCount = 0;
-    let audioCtx = null;
-
-    function getAudioCtx() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      return audioCtx;
-    }
-
-    function playAlert() {
-      if (!soundEnabled) return;
-      try {
-        const ctx = getAudioCtx();
-        const notes = [880, 1046, 1318];
-        notes.forEach((freq, i) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.type = 'sine';
-          const t = ctx.currentTime + i * 0.12;
-          osc.frequency.setValueAtTime(freq, t);
-          gain.gain.setValueAtTime(0, t);
-          gain.gain.linearRampToValueAtTime(0.25, t + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-          osc.start(t);
-          osc.stop(t + 0.25);
+        const nav = document.getElementById('main-nav');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                nav.classList.add('py-4', 'bg-[#050505]/80', 'backdrop-blur-md', 'border-b', 'border-white/5');
+                nav.classList.remove('py-8', 'bg-transparent');
+            } else {
+                nav.classList.remove('py-4', 'bg-[#050505]/80', 'backdrop-blur-md', 'border-b', 'border-white/5');
+                nav.classList.add('py-8', 'bg-transparent');
+            }
         });
-      } catch (_) {}
-    }
 
-    function fmt(price) {
-      if (price == null) return '—';
-      return '$' + price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
-    }
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            document.querySelectorAll('.parallax-card-up').forEach(el => el.style.setProperty('--scroll-offset-up', `${scrolled * -0.05}px`));
+            document.querySelectorAll('.parallax-card-down').forEach(el => el.style.setProperty('--scroll-offset-down', `${scrolled * 0.05}px`));
+        });
 
-    function fmtPct(pct) {
-      if (pct == null) return '—';
-      const sign = pct >= 0 ? '+' : '';
-      return sign + pct.toFixed(2) + '%';
-    }
+        function updateTime() {
+            const clockEl = document.getElementById('current-time');
+            const now = new Date();
+            let hours = now.getHours();
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12;
+            clockEl.textContent = `${hours}:${minutes} ${ampm}`;
+        }
+        setInterval(updateTime, 60000);
+        updateTime();
 
-    // Robot Character Logic
-    let robotState = 'neutral';
-    const robot = document.getElementById('robot');
-    const robotBubble = document.getElementById('expression-bubble');
-    const expressionText = document.getElementById('expression-text');
-    const leftEye = document.getElementById('left-eye');
-    const rightEye = document.getElementById('right-eye');
-    const mouthPath = document.getElementById('mouth-path');
-    const armLeft = document.getElementById('arm-left');
-    const armRight = document.getElementById('arm-right');
+        const heroWrapper = document.getElementById('hero-content-wrapper');
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            if (scrolled < 1000) {
+                heroWrapper.style.transform = `translateY(${scrolled * 0.4}px)`;
+                heroWrapper.style.opacity = Math.max(0, 1 - scrolled / 600);
+            }
+        });
 
-    function showRobotReaction(pct) {
-      const isHigh = pct != null && pct > 1;
-      const isLow = pct != null && pct < -1;
+        // --- Trading Scanner Logic ---
+        let soundEnabled = false;
+        let audioCtx = null;
+        let priceHistory = {};
+        let seenAlerts = new Set();
+        let totalAlertsFired = 0;
 
-      if (isLow) {
-        robotState = 'warning';
-        expressionText.textContent = '⚠️ RISKY!';
-        mouthPath.setAttribute('d', 'M 42 36 Q 50 32 58 36');
-        leftEye.setAttribute('y', '26');
-        rightEye.setAttribute('y', '26');
-        armLeft.setAttribute('transform', 'rotate(-20 26 60)');
-        armRight.setAttribute('transform', 'rotate(20 74 60)');
-      } else if (isHigh) {
-        robotState = 'bullish';
-        expressionText.textContent = '🚀 BUY IT!';
-        mouthPath.setAttribute('d', 'M 42 32 Q 50 38 58 32');
-        leftEye.setAttribute('y', '22');
-        rightEye.setAttribute('y', '22');
-        armLeft.setAttribute('transform', 'rotate(-45 26 60)');
-        armRight.setAttribute('transform', 'rotate(45 74 60)');
-      } else {
-        robotState = 'neutral';
-        expressionText.textContent = 'Hold tight!';
-        mouthPath.setAttribute('d', 'M 42 36 Q 50 38 58 36');
-        leftEye.setAttribute('y', '24');
-        rightEye.setAttribute('y', '24');
-        armLeft.removeAttribute('transform');
-        armRight.removeAttribute('transform');
-      }
+        // Trading Canvas Background (2D Lines)
+        const canvas = document.createElement('canvas');
+        canvas.className = 'fixed inset-0 z-10 pointer-events-none opacity-50';
+        document.body.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+        let tradingData = [];
+        let scrollOffset = 0;
 
-      robotBubble.style.opacity = '1';
-      setTimeout(() => {
-        robotBubble.style.opacity = '0';
-      }, 3000);
-    }
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+            canvas.style.width = window.innerWidth + 'px';
+            canvas.style.height = window.innerHeight + 'px';
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
 
-    // Cursor tracking
-    document.addEventListener('mousemove', (e) => {
-      const x = e.clientX - 50;
-      const y = e.clientY - 50;
-      robot.style.left = x + 'px';
-      robot.style.top = y + 'px';
+        function generateTradingLines() {
+            const lines = [];
+            const colors = ['#ef233c', '#10d97a', '#3b82f6'];
+            for (let i = 0; i < 6; i++) {
+                const points = [];
+                const baseY = (i + 1) * (window.innerHeight / 7);
+                const volatility = 20 + Math.random() * 40;
+                const trend = (Math.random() - 0.5) * 0.5;
+                for (let x = 0; x < window.innerWidth + 200; x += 10) {
+                    points.push({ x, y: baseY + Math.sin(x * 0.005 + i) * volatility + (x * trend) });
+                }
+                lines.push({
+                    points,
+                    color: colors[Math.floor(Math.random() * 3)],
+                    opacity: 0.3 + Math.random() * 0.3,
+                    width: 1 + Math.random() * 1.5
+                });
+            }
+            return lines;
+        }
 
-      // Gentle antenna wiggle
-      const wiggle = Math.sin(Date.now() * 0.003) * 2;
-      robot.style.transform = `rotate(${wiggle}deg)`;
-    });
+        function animateCanvas() {
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-    function renderCards(stocks, threshold) {
-      const grid = document.getElementById('cards-grid');
-      const mobileCards = document.getElementById('mobile-cards');
-      let html = '';
+            tradingData.forEach(line => {
+                ctx.strokeStyle = line.color;
+                ctx.globalAlpha = line.opacity;
+                ctx.lineWidth = line.width;
+                ctx.beginPath();
+                if(line.points.length) ctx.moveTo(line.points[0].x - scrollOffset, line.points[0].y);
+                for (let i = 1; i < line.points.length; i++) {
+                    ctx.lineTo(line.points[i].x - scrollOffset, line.points[i].y);
+                }
+                ctx.stroke();
+            });
 
-      stocks.forEach(s => {
-        const pct = s.pct_change;
-        const pctClass = pct == null ? 'text-zinc-400' : pct > 0 ? 'text-green-400' : 'text-red-400';
-        const alertBg = pct != null && Math.abs(pct) >= threshold ? 'border-[#ef233c] bg-red-950/10' : '';
+            scrollOffset += 0.5;
+            if (scrollOffset > window.innerWidth) scrollOffset = 0;
+            requestAnimationFrame(animateCanvas);
+        }
 
-        html += `
-          <div class="group glass-card rounded-xl p-8 hover:border-white/20 transition-all cursor-pointer ${alertBg}" data-ticker="${s.ticker}" data-pct="${pct}">
-            <div class="flex items-start justify-between mb-4">
-              <div>
-                <div class="text-sm font-bold text-[#ef233c] tracking-wide mb-1">${s.ticker}</div>
-                <div class="text-lg font-semibold text-white">${s.name || ''}</div>
-              </div>
-              ${pct != null && Math.abs(pct) >= threshold ? '<div class="px-3 py-1 rounded-full bg-[#ef233c]/20 text-[#ef233c] text-xs font-bold">ALERT</div>' : ''}
-            </div>
-            <div class="text-4xl font-bold font-mono text-white mb-2">${fmt(s.price)}</div>
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-mono ${pctClass}">${fmtPct(pct)}</span>
-              <span class="text-sm text-zinc-500">Base: ${fmt(s.baseline)}</span>
-            </div>
-            <div class="mt-4 h-1 bg-white/10 rounded-full overflow-hidden">
-              <div class="h-full ${pct > 0 ? 'bg-green-500' : 'bg-red-500'}" style="width: ${Math.min(Math.abs(pct ?? 0) / threshold * 100, 100)}%"></div>
-            </div>
-          </div>
+        resizeCanvas();
+        tradingData = generateTradingLines();
+        animateCanvas();
+        window.addEventListener('resize', () => { resizeCanvas(); tradingData = generateTradingLines(); });
+
+        function getAudioCtx() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            return audioCtx;
+        }
+
+        function playAlert() {
+            if (!soundEnabled) return;
+            try {
+                const ctx = getAudioCtx();
+                const notes = [659.25, 880, 1318.51]; // E5, A5, E6 (Etheral chime)
+                notes.forEach((freq, i) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.type = 'sine';
+                    const t = ctx.currentTime + i * 0.15;
+                    osc.frequency.setValueAtTime(freq, t);
+                    gain.gain.setValueAtTime(0, t);
+                    gain.gain.linearRampToValueAtTime(0.15, t + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+                    osc.start(t);
+                    osc.stop(t + 0.5);
+                });
+            } catch (_) { }
+        }
+
+        document.getElementById('sound-btn').addEventListener('click', (e) => {
+            soundEnabled = !soundEnabled;
+            e.currentTarget.textContent = soundEnabled ? 'Audio: Enabled' : 'Enable Audio';
+            e.currentTarget.classList.toggle('bg-[#FF4500]');
+            e.currentTarget.classList.toggle('text-white');
+            e.currentTarget.classList.toggle('border-transparent');
+            document.getElementById('param-audio').textContent = soundEnabled ? 'ENABLED' : 'DISABLED';
+            if (soundEnabled) {
+                const ctx = getAudioCtx();
+                if (ctx.state === 'suspended') ctx.resume().then(playAlert);
+                else playAlert();
+            }
+        });
+
+        function fmt(p) { return p != null ? p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 }) : '---'; }
+
+        function generateSparkline(prices) {
+            if (!prices || prices.length < 2) return '<div class="h-20 flex items-center justify-center text-[10px] text-gray-700 font-mono">Gathering Market Data...</div>';
+            const min = Math.min(...prices);
+            const max = Math.max(...prices);
+            const range = (max - min) || 1;
+            const step = 100 / (prices.length - 1);
+            
+            const points = prices.map((p, i) => {
+                const x = i * step;
+                const y = 38 - ((p - min) / range * 36 + 2);
+                return `${x},${y}`;
+            }).join(' ');
+
+            return `
+                <div class="relative h-full flex flex-col justify-end">
+                    <svg class="w-full h-20 overflow-visible" viewBox="0 0 100 40" preserveAspectRatio="none">
+                        <!-- Grid Lines -->
+                        <line x1="0" y1="5" x2="100" y2="5" stroke="rgba(255,255,255,0.03)" stroke-dasharray="1,2"/>
+                        <line x1="0" y1="20" x2="100" y2="20" stroke="rgba(255,255,255,0.03)" stroke-dasharray="1,2"/>
+                        <line x1="0" y1="35" x2="100" y2="35" stroke="rgba(255,255,255,0.03)" stroke-dasharray="1,2"/>
+                        
+                        <!-- Sparkline -->
+                        <polyline points="${points}" fill="none" stroke="#FF4500" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+                        
+                        <!-- Current Value Dot -->
+                        <circle cx="100" cy="${38 - ((prices[prices.length-1] - min) / range * 36 + 2)}" r="2.5" fill="#fff" />
+                    </svg>
+                </div>
+            `;
+        }
+
+        function renderCards(stocks, threshold) {
+            const grid = document.getElementById('cards-grid');
+            let html = '';
+
+            stocks.forEach(s => {
+                const pct = s.pct_change || 0;
+                const isAlert = Math.abs(pct) >= threshold;
+                const sign = pct >= 0 ? '+' : '';
+                
+                if (!priceHistory[s.ticker]) priceHistory[s.ticker] = [];
+                if (s.price != null) {
+                    priceHistory[s.ticker].push(s.price);
+                    if (priceHistory[s.ticker].length > 40) priceHistory[s.ticker].shift();
+                }
+
+                const prices = priceHistory[s.ticker];
+                const min = prices.length ? Math.min(...prices) : s.price;
+                const max = prices.length ? Math.max(...prices) : s.price;
+                const range = (max - min) || 1;
+                const posPct = ((s.price - min) / range) * 100;
+                
+                const momentum = prices.length > 5 ? (s.price - prices[prices.length - 5]) : 0;
+                const volatility = ((range / min) * 100).toFixed(2);
+
+                html += `
+                    <div class="stock-card rounded-3xl p-6 ${isAlert ? 'alert-active' : ''} group relative overflow-hidden bg-[#0a0a0a] border border-white/5 hover:bg-[#111]">
+                        <!-- Background Glow -->
+                        <div class="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none"></div>
+                        
+                        <!-- Header: Ticker & Status -->
+                        <div class="flex justify-between items-start mb-6 relative z-10">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center font-serif text-lg text-white group-hover:scale-110 transition-transform">
+                                    ${s.ticker[0]}
+                                </div>
+                                <div>
+                                    <h3 class="text-xl font-serif text-white tracking-tight leading-none">${s.ticker}/USD</h3>
+                                    <p class="text-[9px] text-gray-500 font-mono mt-1.5 uppercase tracking-widest">Global Equities</p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-end">
+                                <div class="px-3 py-1 rounded-full text-xs font-mono border ${isAlert ? 'border-[#FF4500] text-[#FF4500] bg-[#FF4500]/10 shadow-[0_0_15px_rgba(255,69,0,0.4)]' : 'border-white/10 text-white/70 bg-white/5'}">
+                                    ${sign}${pct.toFixed(2)}%
+                                </div>
+                                <p class="text-[9px] text-gray-600 font-mono mt-2">BASE: ${fmt(s.baseline)}</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Price & Graph Area -->
+                        <div class="grid grid-cols-12 gap-4 relative z-10 mt-2">
+                            <!-- Main Price -->
+                            <div class="col-span-5 flex flex-col justify-end pb-1">
+                                <div class="text-gray-500 text-[9px] uppercase tracking-widest font-mono mb-1">Current Price</div>
+                                <div class="text-3xl lg:text-4xl font-light tracking-tight text-white font-mono leading-none">
+                                    <span class="text-gray-600 text-xl mr-0.5">$</span>${fmt(s.price)}
+                                </div>
+                                <!-- Range bar -->
+                                <div class="mt-4">
+                                    <div class="flex justify-between text-[9px] text-gray-500 font-mono mb-1.5">
+                                        <span>L: ${fmt(min)}</span>
+                                        <span>H: ${fmt(max)}</span>
+                                    </div>
+                                    <div class="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                                        <div class="h-full bg-white/40 rounded-full transition-all duration-500" style="width: ${posPct}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Graph -->
+                            <div class="col-span-7 border-l border-white/5 pl-4">
+                                ${generateSparkline(prices)}
+                            </div>
+                        </div>
+                        
+                        <!-- Action/Metrics Footer -->
+                        <div class="mt-6 pt-5 border-t border-white/5 grid grid-cols-3 gap-3 relative z-10">
+                            <div class="bg-black/40 rounded-xl p-2.5 border border-white/5 flex flex-col justify-center">
+                                <div class="text-[8px] text-gray-500 uppercase tracking-widest mb-1">Volatility</div>
+                                <div class="text-xs text-white font-mono">${volatility}%</div>
+                            </div>
+                            <div class="bg-black/40 rounded-xl p-2.5 border border-white/5 flex flex-col justify-center">
+                                <div class="text-[8px] text-gray-500 uppercase tracking-widest mb-1">Momentum (5t)</div>
+                                <div class="text-xs ${momentum >= 0 ? 'text-green-500' : 'text-[#FF4500]'} font-mono">${momentum >= 0 ? '+' : ''}${fmt(momentum)}</div>
+                            </div>
+                            <button class="bg-white/5 hover:bg-[#FF4500] border border-white/10 hover:border-[#FF4500] text-white rounded-xl text-[10px] font-mono transition-all duration-300 uppercase tracking-widest flex items-center justify-center gap-1 group/btn">
+                                Execute <iconify-icon icon="lucide:arrow-right" class="group-hover/btn:translate-x-1 transition-transform"></iconify-icon>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if(stocks.length > 0 && grid.innerHTML === '') {
+                // Initialize reveal on new cards
+                grid.innerHTML = html;
+                grid.querySelectorAll('.stock-card').forEach((el, i) => {
+                    el.classList.add('reveal', 'active');
+                    el.style.transitionDelay = `${i * 100}ms`;
+                });
+            } else {
+                grid.innerHTML = html;
+                grid.querySelectorAll('.stock-card').forEach(el => el.classList.add('active'));
+            }
+        }
+
+        function renderAlerts(alerts) {
+            const list = document.getElementById('alert-list');
+            if (!alerts || !alerts.length) return;
+            
+            let html = list.innerHTML.includes('Awaiting market movement') ? '' : list.innerHTML;
+            let hasNew = false;
+
+            [...alerts].reverse().forEach(a => {
+                const key = a.ticker + '_' + a.time;
+                if (seenAlerts.has(key)) return;
+                seenAlerts.add(key);
+                hasNew = true;
+                totalAlertsFired++;
+
+                const sign = a.pct_change >= 0 ? '+' : '';
+                html = `
+                    <div class="flex items-center px-2 py-3 border-b border-white/5 hover:bg-white/5 transition-colors text-xs font-mono">
+                        <div class="w-1/4 text-white font-bold">${a.ticker}</div>
+                        <div class="w-1/4 text-right text-gray-400">${fmt(a.price)}</div>
+                        <div class="w-1/4 text-right text-[#FF4500]">${sign}${a.pct_change.toFixed(2)}%</div>
+                        <div class="w-1/4 text-right text-gray-500">${a.time}</div>
+                    </div>
+                ` + html;
+            });
+
+            if (hasNew) {
+                list.innerHTML = html;
+                document.getElementById('total-alerts-count').textContent = totalAlertsFired;
+                playAlert();
+            }
+        }
+
+        async function fetchStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                
+                if (!data.initialized) {
+                    document.getElementById('nav-status').className = 'w-2 h-2 rounded-full bg-red-500';
+                    return;
+                }
+                
+                document.getElementById('nav-status').className = 'w-2 h-2 rounded-full bg-green-500 animate-pulse';
+                document.getElementById('stat-tracking').textContent = `${data.stocks.length} ASSETS TRACKED`;
+                document.getElementById('param-threshold').textContent = `±${data.threshold}%`;
+
+                renderCards(data.stocks, data.threshold);
+                renderAlerts(data.alerts);
+            } catch (e) {
+                document.getElementById('nav-status').className = 'w-2 h-2 rounded-full bg-red-500';
+            }
+        }
+
+        // Initial fetch and interval
+        fetchStatus();
+        setInterval(fetchStatus, 3000);
+    </script>
+
+    <!-- OGL WebGL Glitch Terminal Component -->
+    <script type="module">
+        import { Renderer, Program, Mesh, Color, Triangle } from 'https://cdn.skypack.dev/ogl';
+
+        const vertexShader = `
+        attribute vec2 position;
+        attribute vec2 uv;
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = vec4(position, 0.0, 1.0);
+        }`;
+
+        const fragmentShader = `
+        precision mediump float;
+        varying vec2 vUv;
+        uniform float iTime;
+        uniform vec3  iResolution;
+        uniform float uScale;
+        uniform vec2  uGridMul;
+        uniform float uDigitSize;
+        uniform float uScanlineIntensity;
+        uniform float uGlitchAmount;
+        uniform float uFlickerAmount;
+        uniform float uNoiseAmp;
+        uniform float uChromaticAberration;
+        uniform float uDither;
+        uniform float uCurvature;
+        uniform vec3  uTint;
+        uniform vec2  uMouse;
+        uniform float uMouseStrength;
+        uniform float uUseMouse;
+        uniform float uBrightness;
+
+        float time;
+
+        float hash21(vec2 p){
+            p = fract(p * 234.56);
+            p += dot(p, p + 34.56);
+            return fract(p.x * p.y);
+        }
+
+        float noise(vec2 p){
+            return sin(p.x * 10.0) * sin(p.y * (3.0 + sin(time * 0.090909))) + 0.2; 
+        }
+
+        mat2 rotate(float angle){
+            float c = cos(angle);
+            float s = sin(angle);
+            return mat2(c, -s, s, c);
+        }
+
+        float fbm(vec2 p){
+            p *= 1.1;
+            float f = 0.0;
+            float amp = 0.5 * uNoiseAmp;
+            
+            mat2 modify0 = rotate(time * 0.02);
+            f += amp * noise(p);
+            p = modify0 * p * 2.0;
+            amp *= 0.454545;
+            
+            mat2 modify1 = rotate(time * 0.02);
+            f += amp * noise(p);
+            p = modify1 * p * 2.0;
+            amp *= 0.454545;
+            
+            mat2 modify2 = rotate(time * 0.08);
+            f += amp * noise(p);
+            
+            return f;
+        }
+
+        float pattern(vec2 p, out vec2 q, out vec2 r) {
+            vec2 offset1 = vec2(1.0);
+            vec2 offset0 = vec2(0.0);
+            mat2 rot01 = rotate(0.1 * time);
+            mat2 rot1 = rotate(0.1);
+            
+            q = vec2(fbm(p + offset1), fbm(rot01 * p + offset1));
+            r = vec2(fbm(rot1 * q + offset0), fbm(q + offset0));
+            return fbm(p + r);
+        }
+
+        float digit(vec2 p){
+            vec2 grid = uGridMul * 15.0;
+            vec2 s = floor(p * grid) / grid;
+            p = p * grid;
+            vec2 q, r;
+            float intensity = pattern(s * 0.1, q, r) * 1.3 - 0.03;
+            
+            if(uUseMouse > 0.5){
+                vec2 mouseWorld = uMouse * uScale;
+                float distToMouse = distance(s, mouseWorld);
+                float mouseInfluence = exp(-distToMouse * 8.0) * uMouseStrength * 10.0;
+                intensity += mouseInfluence;
+                
+                float ripple = sin(distToMouse * 20.0 - iTime * 5.0) * 0.1 * mouseInfluence;
+                intensity += ripple;
+            }
+            
+            p = fract(p);
+            p *= uDigitSize;
+            
+            float px5 = p.x * 5.0;
+            float py5 = (1.0 - p.y) * 5.0;
+            float x = fract(px5);
+            float y = fract(py5);
+            
+            float i = floor(py5) - 2.0;
+            float j = floor(px5) - 2.0;
+            float n = i * i + j * j;
+            float f = n * 0.0625;
+            
+            float isOn = step(0.1, intensity - f);
+            float brightness = isOn * (0.2 + y * 0.8) * (0.75 + x * 0.25);
+            
+            return step(0.0, p.x) * step(p.x, 1.0) * step(0.0, p.y) * step(p.y, 1.0) * brightness;
+        }
+
+        float onOff(float a, float b, float c){
+            return step(c, sin(iTime + a * cos(iTime * b))) * uFlickerAmount;
+        }
+
+        float displace(vec2 look){
+            float y = look.y - mod(iTime * 0.25, 1.0);
+            float window = 1.0 / (1.0 + 50.0 * y * y);
+            return sin(look.y * 20.0 + iTime) * 0.0125 * onOff(4.0, 2.0, 0.8) * (1.0 + cos(iTime * 60.0)) * window;
+        }
+
+        vec3 getColor(vec2 p){
+            float bar = step(mod(p.y + time * 20.0, 1.0), 0.2) * 0.4 + 1.0;
+            bar *= uScanlineIntensity;
+            
+            float displacement = displace(p);
+            p.x += displacement;
+            if (uGlitchAmount != 1.0) {
+                float extra = displacement * (uGlitchAmount - 1.0);
+                p.x += extra;
+            }
+            float middle = digit(p);
+            
+            const float off = 0.002;
+            float sum = digit(p + vec2(-off, -off)) + digit(p + vec2(0.0, -off)) + digit(p + vec2(off, -off)) +
+                        digit(p + vec2(-off, 0.0)) + digit(p + vec2(0.0, 0.0)) + digit(p + vec2(off, 0.0)) +
+                        digit(p + vec2(-off, off)) + digit(p + vec2(0.0, off)) + digit(p + vec2(off, off));
+            
+            vec3 baseColor = vec3(0.9) * middle + sum * 0.1 * vec3(1.0) * bar;
+            return baseColor;
+        }
+
+        vec2 barrel(vec2 uv){
+            vec2 c = uv * 2.0 - 1.0;
+            float r2 = dot(c, c);
+            c = (1.0 + uCurvature * r2) * c;
+            return c * 0.5 + 0.5;
+        }
+
+        void main() {
+            time = iTime * 0.333333;
+            vec2 uv = vUv;
+            if(uCurvature != 0.0){
+                uv = barrel(uv);
+            }
+            
+            vec2 p = uv * uScale;
+            vec3 col = getColor(p);
+            if(uChromaticAberration != 0.0){
+                vec2 ca = vec2(uChromaticAberration) / iResolution.xy;
+                col.r = getColor(p + ca).r;
+                col.b = getColor(p - ca).b;
+            }
+            col *= uTint;
+            col *= uBrightness;
+            if(uDither > 0.0){
+                float rnd = hash21(gl_FragCoord.xy);
+                col += (rnd - 0.5) * (uDither * 0.003922);
+            }
+            gl_FragColor = vec4(col, 1.0);
+        }
         `;
-      });
 
-      grid.innerHTML = html;
+        function hexToRgb(hex) {
+            let h = hex.replace('#', '').trim();
+            if (h.length === 3) h = h.split('').map(c => c + c).join('');
+            const num = parseInt(h, 16);
+            return [((num >> 16) & 255) / 255, ((num >> 8) & 255) / 255, (num & 255) / 255];
+        }
 
-      // Add click handlers to cards
-      document.querySelectorAll('[data-ticker]').forEach(card => {
-        card.addEventListener('click', (e) => {
-          const ticker = e.currentTarget.dataset.ticker;
-          const pct = parseFloat(e.currentTarget.dataset.pct);
-          showRobotReaction(pct);
+        const ctn = document.getElementById('glitch-bg');
+        const renderer = new Renderer({ dpr: 2 });
+        const gl = renderer.gl;
+        gl.clearColor(0.02, 0.02, 0.02, 1);
+        ctn.appendChild(gl.canvas);
+
+        const geometry = new Triangle(gl);
+        const tintVec = hexToRgb('#FF4500'); // Orange/Red glitch
+
+        const program = new Program(gl, {
+            vertex: vertexShader,
+            fragment: fragmentShader,
+            uniforms: {
+                iTime: { value: 0 },
+                iResolution: { value: new Color(gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height) },
+                uScale: { value: 1.5 },
+                uGridMul: { value: new Float32Array([2, 1]) },
+                uDigitSize: { value: 1.2 },
+                uScanlineIntensity: { value: 1.0 },
+                uGlitchAmount: { value: 1.2 },
+                uFlickerAmount: { value: 1.0 },
+                uNoiseAmp: { value: 1.0 },
+                uChromaticAberration: { value: 2.0 },
+                uDither: { value: 0.1 },
+                uCurvature: { value: 0.1 },
+                uTint: { value: new Color(tintVec[0], tintVec[1], tintVec[2]) },
+                uMouse: { value: new Float32Array([0.5, 0.5]) },
+                uMouseStrength: { value: 0.5 },
+                uUseMouse: { value: 1.0 },
+                uBrightness: { value: 1.0 }
+            }
         });
-      });
-    }
 
-    function renderAlerts(alerts) {
-      const list = document.getElementById('alert-list');
-      const mobileAlerts = document.getElementById('mobile-alerts');
-      let html = '';
+        const mesh = new Mesh(gl, { geometry, program });
 
-      if (!alerts || alerts.length === 0) {
-        list.innerHTML = '<div class="text-center text-zinc-400 py-8"><iconify-icon icon="lucide:bell-off" class="w-8 h-8 mx-auto mb-2 opacity-50"></iconify-icon><p>No alerts yet. Waiting for price movements...</p></div>';
-        mobileAlerts.innerHTML = '<div class="text-[10px] text-zinc-400">Waiting...</div>';
-        return;
-      }
-
-      alerts.forEach(a => {
-        const sign = a.pct_change >= 0 ? '+' : '';
-        const cls = a.pct_change >= 0 ? 'text-green-400' : 'text-red-400';
-        html += `
-          <div class="p-4 border-l-2 border-[#ef233c] bg-red-950/10 rounded">
-            <div class="flex justify-between items-start mb-2">
-              <span class="font-mono font-bold">${a.name} (${a.ticker})</span>
-              <span class="text-xs text-zinc-400">${a.time}</span>
-            </div>
-            <div class="text-sm">
-              <span class="${cls} font-bold">${sign}${a.pct_change.toFixed(2)}%</span>
-              <span class="text-zinc-400 ml-2">· ${fmt(a.price)}</span>
-            </div>
-          </div>
-        `;
-      });
-
-      list.innerHTML = html;
-      mobileAlerts.innerHTML = alerts.slice(0, 2).map(a => {
-        const sign = a.pct_change >= 0 ? '+' : '';
-        const cls = a.pct_change >= 0 ? 'text-green-400' : 'text-red-400';
-        return `<div class="text-[10px]"><span class="${cls} font-bold">${sign}${a.pct_change.toFixed(2)}%</span> ${a.name}</div>`;
-      }).join('');
-    }
-
-    async function fetchStatus() {
-      try {
-        const res = await fetch('/api/status');
-        const data = await res.json();
-
-        if (!data.initialized) return;
-
-        renderCards(data.stocks, data.threshold);
-        renderAlerts(data.alerts);
-
-        const count = data.alert_count || 0;
-        document.getElementById('alert-count').textContent = count;
-        document.getElementById('stat-alerts').textContent = count;
-
-        if (count > lastAlertCount) {
-          playAlert();
+        function resizeGL() {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            program.uniforms.iResolution.value = new Color(gl.canvas.width, gl.canvas.height, gl.canvas.width / gl.canvas.height);
         }
-        lastAlertCount = count;
-      } catch (_) {}
-    }
+        window.addEventListener('resize', resizeGL);
+        resizeGL();
 
-    document.body.addEventListener('pointerdown', () => {
-      try {
-        const ctx = getAudioCtx();
-        if (ctx.state === 'suspended') ctx.resume();
-      } catch (_) {}
-    }, { once: true });
-
-    document.getElementById('get-started-btn')?.addEventListener('click', () => {
-      soundEnabled = !soundEnabled;
-      if (soundEnabled) {
-        try {
-          const ctx = getAudioCtx();
-          if (ctx.state === 'suspended') ctx.resume().then(() => playAlert()).catch(() => playAlert());
-          else playAlert();
-        } catch (_) {}
-      }
-    });
-
-    fetchStatus();
-    setInterval(fetchStatus, 5000);
-  </script>
-
-  <script>
-    // Trading Canvas Background - Animated price lines
-    const canvas = document.getElementById('trading-canvas');
-    const ctx = canvas.getContext('2d');
-    let tradingData = [];
-    let animationId = null;
-    let scrollOffset = 0;
-
-    // Color palette matching red noir design
-    const colors = {
-      red: '#ef233c',
-      green: '#10d97a',
-      blue: '#3b82f6',
-      muted: 'rgba(255, 255, 255, 0.05)',
-      accent: 'rgba(239, 35, 60, 0.3)'
-    };
-
-    function resizeCanvas() {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      canvas.style.width = window.innerWidth + 'px';
-      canvas.style.height = window.innerHeight + 'px';
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-
-    function generateTradingLines() {
-      const lines = [];
-      const numLines = 8;
-      const lineHeight = window.innerHeight / (numLines + 1);
-
-      for (let i = 0; i < numLines; i++) {
-        const points = [];
-        const baseY = (i + 1) * lineHeight;
-        const volatility = 20 + Math.random() * 40;
-        const trend = (Math.random() - 0.5) * 0.5;
-
-        for (let x = 0; x < window.innerWidth + 200; x += 10) {
-          const y = baseY + Math.sin(x * 0.005 + i) * volatility + (x * trend);
-          points.push({ x, y });
-        }
-
-        lines.push({
-          points,
-          color: [colors.red, colors.green, colors.blue][Math.floor(Math.random() * 3)],
-          opacity: 0.2 + Math.random() * 0.3,
-          width: 1 + Math.random() * 1.5,
-          phase: Math.random() * Math.PI * 2
+        let mouse = { x: 0.5, y: 0.5 };
+        let smoothMouse = { x: 0.5, y: 0.5 };
+        
+        document.addEventListener('mousemove', (e) => {
+            mouse.x = e.clientX / window.innerWidth;
+            mouse.y = 1 - (e.clientY / window.innerHeight);
         });
-      }
 
-      return lines;
-    }
-
-    function drawTradingLine(line, offset) {
-      if (line.points.length < 2) return;
-
-      // Random glitch effect
-      const glitchAmount = Math.random() * 8;
-      const glitchX = (Math.random() - 0.5) * glitchAmount;
-      const glitchY = (Math.random() - 0.5) * glitchAmount;
-
-      ctx.strokeStyle = line.color;
-      ctx.globalAlpha = line.opacity;
-      ctx.lineWidth = line.width;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      // Draw main line
-      ctx.beginPath();
-      ctx.moveTo(line.points[0].x - offset + glitchX, line.points[0].y + glitchY);
-
-      for (let i = 1; i < line.points.length; i++) {
-        const point = line.points[i];
-        const pGlitchX = (Math.random() - 0.5) * glitchAmount;
-        const pGlitchY = (Math.random() - 0.5) * glitchAmount;
-        ctx.lineTo(point.x - offset + pGlitchX, point.y + pGlitchY);
-      }
-
-      ctx.stroke();
-
-      // Draw glitch duplicates with color shifts
-      if (Math.random() > 0.7) {
-        ctx.globalAlpha = line.opacity * 0.5;
-        
-        // Red channel glitch
-        ctx.strokeStyle = '#ff0055';
-        ctx.beginPath();
-        ctx.moveTo(line.points[0].x - offset + (Math.random() - 0.5) * 6, line.points[0].y + (Math.random() - 0.5) * 6);
-        for (let i = 1; i < line.points.length; i += 3) {
-          const point = line.points[i];
-          ctx.lineTo(point.x - offset + (Math.random() - 0.5) * 6, point.y + (Math.random() - 0.5) * 6);
-        }
-        ctx.stroke();
-
-        // Cyan channel glitch
-        ctx.strokeStyle = '#00ffff';
-        ctx.beginPath();
-        ctx.moveTo(line.points[0].x - offset - (Math.random() - 0.5) * 6, line.points[0].y - (Math.random() - 0.5) * 6);
-        for (let i = 1; i < line.points.length; i += 3) {
-          const point = line.points[i];
-          ctx.lineTo(point.x - offset - (Math.random() - 0.5) * 6, point.y - (Math.random() - 0.5) * 6);
-        }
-        ctx.stroke();
-      }
-
-      ctx.globalAlpha = 1;
-    }
-
-    function drawPriceLabels(line, offset) {
-      ctx.globalAlpha = 0.4;
-      ctx.font = '11px monospace';
-      ctx.fillStyle = line.color;
-
-      for (let i = 0; i < line.points.length; i += 20) {
-        const point = line.points[i];
-        const price = (100 + Math.sin(i * 0.02) * 50).toFixed(2);
-        const x = point.x - offset;
-        const y = point.y;
-
-        if (x > -50 && x < window.innerWidth + 50) {
-          const glitchOffsetX = (Math.random() - 0.5) * 4;
-          const glitchOffsetY = (Math.random() - 0.5) * 4;
-          
-          // Main text
-          ctx.fillText('$' + price, x - 20 + glitchOffsetX, y - 10 + glitchOffsetY);
-
-          // Glitch duplicate (red shift)
-          if (Math.random() > 0.8) {
-            ctx.globalAlpha = 0.25;
-            ctx.fillStyle = '#ff0055';
-            ctx.fillText('$' + price, x - 20 + (Math.random() - 0.5) * 6, y - 10 + (Math.random() - 0.5) * 6);
-            ctx.fillStyle = line.color;
-            ctx.globalAlpha = 0.4;
-          }
-
-          // Glitch duplicate (cyan shift)
-          if (Math.random() > 0.8) {
-            ctx.globalAlpha = 0.2;
-            ctx.fillStyle = '#00ffff';
-            ctx.fillText('$' + price, x - 20 - (Math.random() - 0.5) * 6, y - 10 - (Math.random() - 0.5) * 6);
-            ctx.fillStyle = line.color;
-            ctx.globalAlpha = 0.4;
-          }
-        }
-      }
-
-      ctx.globalAlpha = 1;
-    }
-
-    function animateCanvas() {
-      // Clear with semi-transparent overlay for trail effect
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-
-      // Draw grid overlay
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
-      ctx.lineWidth = 0.5;
-      const gridSize = 50;
-
-      for (let x = -scrollOffset % gridSize; x < window.innerWidth; x += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, window.innerHeight);
-        ctx.stroke();
-      }
-
-      for (let y = 0; y < window.innerHeight; y += gridSize) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(window.innerWidth, y);
-        ctx.stroke();
-      }
-
-      // Draw glow effect for red accent
-      const gradient = ctx.createRadialGradient(
-        window.innerWidth / 2,
-        window.innerHeight / 2,
-        0,
-        window.innerWidth / 2,
-        window.innerHeight / 2,
-        window.innerWidth
-      );
-      gradient.addColorStop(0, 'rgba(239, 35, 60, 0.08)');
-      gradient.addColorStop(1, 'rgba(239, 35, 60, 0)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-
-      // Draw trading lines with price labels
-      tradingData.forEach(line => {
-        drawTradingLine(line, scrollOffset);
-        drawPriceLabels(line, scrollOffset);
-      });
-
-      // Add glitch scanlines effect
-      if (Math.random() > 0.85) {
-        ctx.strokeStyle = 'rgba(239, 35, 60, 0.1)';
-        ctx.lineWidth = 2;
-        const scanY = Math.random() * window.innerHeight;
-        ctx.beginPath();
-        ctx.moveTo(0, scanY);
-        ctx.lineTo(window.innerWidth, scanY);
-        ctx.stroke();
-
-        ctx.strokeStyle = 'rgba(0, 255, 255, 0.05)';
-        ctx.beginPath();
-        ctx.moveTo(0, scanY + 2);
-        ctx.lineTo(window.innerWidth, scanY + 2);
-        ctx.stroke();
-      }
-
-      // Add random noise blocks
-      if (Math.random() > 0.9) {
-        const noiseX = Math.random() * window.innerWidth;
-        const noiseY = Math.random() * window.innerHeight;
-        const noiseW = 30 + Math.random() * 50;
-        const noiseH = 10 + Math.random() * 20;
-        
-        ctx.fillStyle = 'rgba(239, 35, 60, 0.15)';
-        ctx.fillRect(noiseX, noiseY, noiseW, noiseH);
-        
-        ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(noiseX, noiseY, noiseW, noiseH);
-      }
-
-      // Vignette effect
-      const vignetteGradient = ctx.createRadialGradient(
-        window.innerWidth / 2,
-        window.innerHeight / 2,
-        0,
-        window.innerWidth / 2,
-        window.innerHeight / 2,
-        window.innerWidth * 1.5
-      );
-      vignetteGradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      vignetteGradient.addColorStop(0.6, 'rgba(0, 0, 0, 0.2)');
-      vignetteGradient.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
-      ctx.fillStyle = vignetteGradient;
-      ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-
-      // Animate scroll
-      scrollOffset += 0.3;
-      if (scrollOffset > window.innerWidth) {
-        scrollOffset = 0;
-      }
-
-      animationId = requestAnimationFrame(animateCanvas);
-    }
-
-    function initTradingCanvas() {
-      resizeCanvas();
-      tradingData = generateTradingLines();
-      animateCanvas();
-    }
-
-    window.addEventListener('resize', () => {
-      resizeCanvas();
-      tradingData = generateTradingLines();
-    });
-
-    initTradingCanvas();
-  </script>
+        requestAnimationFrame(function update(t) {
+            requestAnimationFrame(update);
+            program.uniforms.iTime.value = t * 0.001;
+            
+            smoothMouse.x += (mouse.x - smoothMouse.x) * 0.08;
+            smoothMouse.y += (mouse.y - smoothMouse.y) * 0.08;
+            program.uniforms.uMouse.value[0] = smoothMouse.x;
+            program.uniforms.uMouse.value[1] = smoothMouse.y;
+            
+            renderer.render({ scene: mesh });
+        });
+    </script>
 </body>
 </html>

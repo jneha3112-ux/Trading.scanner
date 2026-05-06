@@ -1,14 +1,14 @@
 TICKERS = ["TSLA", "NVDA", "PLTR", "AMC", "GME"]
+TICKERS = ["AAPL", "TSLA", "NVDA", "MSFT", "AMZN"]
 
 TICKER_NAMES = {
+    "AAPL": "Apple",
     "TSLA": "Tesla",
     "NVDA": "NVIDIA",
-    "PLTR": "Palantir",
-    "AMC": "AMC Entertainment",
-    "GME": "GameStop",
+    "MSFT": "Microsoft",
+    "AMZN": "Amazon",
 }
 
-POLL_INTERVAL = 5  # seconds (lower to poll faster for demo)
+POLL_INTERVAL = 12  # seconds
 
-ALERT_THRESHOLD = 0.5  # percentage change to trigger alert (lower to guarantee triggers if prices move)
-
+ALERT_THRESHOLD = 5.0  # percentage change to trigger alert
